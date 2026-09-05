@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import { authRouter } from './routes/auth';
 import { customersRouter } from './routes/customers';
 import { projectsRouter } from './routes/projects';
+import { jobsRouter } from './routes/jobs';
 
 const app: Express = express();
 const PORT = process.env.PORT || 3001;
@@ -25,6 +26,7 @@ app.get('/api/v1', (_req: Request, res: Response) => {
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/customers', customersRouter);
 app.use('/api/v1/projects', projectsRouter);
+app.use('/api/v1/jobs', jobsRouter);
 
 // Error handling
 interface HttpError extends Error {

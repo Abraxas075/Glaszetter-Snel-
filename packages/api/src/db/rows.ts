@@ -1,4 +1,13 @@
-import type { Company, Customer, Project, ProjectStatus, User, UserRole } from '@glaszetter/shared';
+import type {
+  Company,
+  Customer,
+  Job,
+  JobStatus,
+  Project,
+  ProjectStatus,
+  User,
+  UserRole,
+} from '@glaszetter/shared';
 
 // Raw snake_case row shapes as returned by `pg`, and mappers to the
 // camelCase domain types used across the app.
@@ -104,6 +113,32 @@ export const mapProjectRow = (row: ProjectRow): Project => ({
   city: row.city ?? undefined,
   description: row.description ?? undefined,
   status: row.status,
+  createdAt: row.created_at,
+  updatedAt: row.updated_at,
+});
+
+export interface JobRow {
+  id: string;
+  company_id: string;
+  project_id: string;
+  name: string;
+  status: JobStatus;
+  due_date: Date | null;
+  team_id: string | null;
+  notes: string | null;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export const mapJobRow = (row: JobRow): Job => ({
+  id: row.id,
+  companyId: row.company_id,
+  projectId: row.project_id,
+  name: row.name,
+  status: row.status,
+  dueDate: row.due_date ?? undefined,
+  teamId: row.team_id ?? undefined,
+  notes: row.notes ?? undefined,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });

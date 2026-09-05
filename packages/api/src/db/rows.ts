@@ -1,8 +1,12 @@
 import type {
   Company,
   Customer,
+  Element,
+  ElementType,
   Job,
   JobStatus,
+  Measurement,
+  MeasurementStatus,
   Project,
   ProjectStatus,
   User,
@@ -139,6 +143,62 @@ export const mapJobRow = (row: JobRow): Job => ({
   dueDate: row.due_date ?? undefined,
   teamId: row.team_id ?? undefined,
   notes: row.notes ?? undefined,
+  createdAt: row.created_at,
+  updatedAt: row.updated_at,
+});
+
+export interface ElementRow {
+  id: string;
+  company_id: string;
+  job_id: string;
+  project_id: string;
+  code: string;
+  type: ElementType;
+  location: string | null;
+  notes: string | null;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export const mapElementRow = (row: ElementRow): Element => ({
+  id: row.id,
+  jobId: row.job_id,
+  projectId: row.project_id,
+  code: row.code,
+  type: row.type,
+  location: row.location ?? undefined,
+  notes: row.notes ?? undefined,
+  createdAt: row.created_at,
+  updatedAt: row.updated_at,
+});
+
+export interface MeasurementRow {
+  id: string;
+  company_id: string;
+  element_id: string;
+  job_id: string;
+  width: string;
+  height: string;
+  glass_type: string | null;
+  notes: string | null;
+  photos: string[];
+  voice_memos: string[];
+  status: MeasurementStatus;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export const mapMeasurementRow = (row: MeasurementRow): Measurement => ({
+  id: row.id,
+  elementId: row.element_id,
+  jobId: row.job_id,
+  width: parseFloat(row.width),
+  height: parseFloat(row.height),
+  glassType: row.glass_type ?? undefined,
+  notes: row.notes ?? undefined,
+  photos: row.photos.length > 0 ? row.photos : undefined,
+  voiceMemos: row.voice_memos.length > 0 ? row.voice_memos : undefined,
+  status: row.status,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });

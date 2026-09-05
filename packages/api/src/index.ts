@@ -1,6 +1,7 @@
-import express, { Express, Request, Response } from 'express';
+import express, { Express, NextFunction, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import { authRouter } from './routes/auth';
 
 const app: Express = express();
 const PORT = process.env.PORT || 3001;
@@ -11,17 +12,23 @@ app.use(cors());
 app.use(express.json());
 
 // Health check
-app.get('/health', (req: Request, res: Response) => {
+app.get('/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', timestamp: new Date() });
 });
 
-// Routes (will be added in Phase 1)
-app.get('/api/v1', (req: Request, res: Response) => {
+// Routes
+app.get('/api/v1', (_req: Request, res: Response) => {
   res.json({ message: 'Glaszetter Snel API v1', phase: 'initialization' });
 });
+app.use('/api/v1/auth', authRouter);
 
 // Error handling
-app.use((err: any, req: Request, res: Response) => {
+interface HttpError extends Error {
+  status?: number;
+  code?: string;
+}
+
+app.use((err: HttpError, _req: Request, res: Response, _next: NextFunction) => {
   console.error(err);
   res.status(err.status || 500).json({
     success: false,

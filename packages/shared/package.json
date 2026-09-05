@@ -25,6 +25,6 @@
     "lint": "eslint src"
   },
   "devDependencies": {
-    "typescript": "workspace:*"
+    "typescript": "*"
   }
 }

@@ -21,6 +21,7 @@
     "jsonwebtoken": "^9.0.2",
     "cors": "^2.8.5",
     "helmet": "^7.1.0",
+    "@anthropic-ai/sdk": "^0.124.0",
     "@glaszetter/shared": "*"
   },
   "devDependencies": {

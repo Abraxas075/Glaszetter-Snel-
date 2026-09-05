@@ -5,6 +5,8 @@ import { authRouter } from './routes/auth';
 import { customersRouter } from './routes/customers';
 import { projectsRouter } from './routes/projects';
 import { jobsRouter } from './routes/jobs';
+import { elementsRouter } from './routes/elements';
+import { measurementsRouter } from './routes/measurements';
 
 const app: Express = express();
 const PORT = process.env.PORT || 3001;
@@ -27,6 +29,8 @@ app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/customers', customersRouter);
 app.use('/api/v1/projects', projectsRouter);
 app.use('/api/v1/jobs', jobsRouter);
+app.use('/api/v1/elements', elementsRouter);
+app.use('/api/v1/measurements', measurementsRouter);
 
 // Error handling
 interface HttpError extends Error {

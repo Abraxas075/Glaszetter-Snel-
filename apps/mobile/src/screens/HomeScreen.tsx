@@ -1,11 +1,13 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Button } from '../components/Button';
 import { useAuth } from '../contexts/AuthContext';
 import { colors, spacing } from '../constants/colors';
 
 export const HomeScreen: React.FC = () => {
   const { user, logout } = useAuth();
+  const router = useRouter();
 
   return (
     <ScrollView style={styles.container}>
@@ -23,7 +25,7 @@ export const HomeScreen: React.FC = () => {
         </View>
 
         <View style={styles.actions}>
-          <Button label="Start Inmeten" onPress={() => {}} variant="primary" />
+          <Button label="Start Inmeten" onPress={() => router.push('/jobs')} variant="primary" />
           <Button label="Mijn Klussen" onPress={() => {}} variant="secondary" />
           <Button label="Uitloggen" onPress={() => void logout()} variant="danger" />
         </View>

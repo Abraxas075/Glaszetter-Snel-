@@ -1,0 +1,30 @@
+{
+  "name": "@glaszetter/mobile",
+  "version": "0.0.1",
+  "private": true,
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "build": "expo build",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "expo": "~50.0.0",
+    "expo-router": "~3.0.0",
+    "react": "18.2.0",
+    "react-native": "0.73.0",
+    "react-native-safe-area-context": "4.8.2",
+    "react-native-screens": "~3.27.0",
+    "@react-navigation/native": "^6.1.9",
+    "@glaszetter/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/react": "~18.2.43",
+    "@types/react-native": "~0.73.0",
+    "typescript": "workspace:*"
+  }
+}

@@ -22,17 +22,27 @@ const assertProjectInCompany = async (companyId: string, projectId: string): Pro
 
 export const listJobs = async (
   companyId: string,
-  { page, limit }: PaginationParams
+  { page, limit }: PaginationParams,
+  filters: { projectId?: string } = {}
 ): Promise<PaginatedResponse<Job>> => {
   const offset = (page - 1) * limit;
+  const conditions = ['company_id = $1'];
+  const params: unknown[] = [companyId];
+
+  if (filters.projectId) {
+    params.push(filters.projectId);
+    conditions.push(`project_id = $${params.length}`);
+  }
+
+  const whereClause = conditions.join(' AND ');
 
   const [rowsResult, countResult] = await Promise.all([
     pool.query<JobRow>(
-      `SELECT * FROM jobs WHERE company_id = $1
-       ORDER BY created_at DESC LIMIT $2 OFFSET $3`,
-      [companyId, limit, offset]
+      `SELECT * FROM jobs WHERE ${whereClause}
+       ORDER BY created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+      [...params, limit, offset]
     ),
-    pool.query<{ count: string }>('SELECT COUNT(*) FROM jobs WHERE company_id = $1', [companyId]),
+    pool.query<{ count: string }>(`SELECT COUNT(*) FROM jobs WHERE ${whereClause}`, params),
   ]);
 
   const total = parseInt(countResult.rows[0].count, 10);

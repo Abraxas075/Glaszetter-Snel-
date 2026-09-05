@@ -29,7 +29,8 @@ const handleNotFound = (err: unknown, res: Response, next: NextFunction) => {
 jobsRouter.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const pagination = parsePagination(req.query as Record<string, unknown>);
-    const result = await listJobs(req.auth!.companyId, pagination);
+    const projectId = typeof req.query.projectId === 'string' ? req.query.projectId : undefined;
+    const result = await listJobs(req.auth!.companyId, pagination, { projectId });
     res.json({ success: true, data: result });
   } catch (err) {
     next(err);

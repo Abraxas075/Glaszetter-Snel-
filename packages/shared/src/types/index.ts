@@ -82,6 +82,7 @@ export interface Job {
   status: JobStatus;
   dueDate?: Date;
   teamId?: string;
+  scheduledDate?: Date;
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -159,6 +160,17 @@ export interface Photo {
   contentType?: string;
   sizeBytes?: number;
   caption?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Team
+export interface Team {
+  id: string;
+  companyId: string;
+  name: string;
+  color?: string;
+  memberIds: string[];
   createdAt: Date;
   updatedAt: Date;
 }

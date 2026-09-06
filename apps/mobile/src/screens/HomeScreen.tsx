@@ -26,7 +26,7 @@ export const HomeScreen: React.FC = () => {
 
         <View style={styles.actions}>
           <Button label="Start Inmeten" onPress={() => router.push('/jobs')} variant="primary" />
-          <Button label="Mijn Klussen" onPress={() => {}} variant="secondary" />
+          <Button label="Mijn Klussen" onPress={() => router.push('/my-jobs')} variant="secondary" />
           <Button label="Uitloggen" onPress={() => void logout()} variant="danger" />
         </View>
       </View>

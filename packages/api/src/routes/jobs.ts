@@ -29,8 +29,16 @@ const handleNotFound = (err: unknown, res: Response, next: NextFunction) => {
 jobsRouter.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const pagination = parsePagination(req.query as Record<string, unknown>);
-    const projectId = typeof req.query.projectId === 'string' ? req.query.projectId : undefined;
-    const result = await listJobs(req.auth!.companyId, pagination, { projectId });
+    const query = req.query as Record<string, unknown>;
+    const strParam = (key: string) => (typeof query[key] === 'string' ? (query[key] as string) : undefined);
+    const result = await listJobs(req.auth!.companyId, pagination, {
+      projectId: strParam('projectId'),
+      teamId: strParam('teamId'),
+      scheduledFrom: strParam('scheduledFrom'),
+      scheduledTo: strParam('scheduledTo'),
+      mine: query.mine === 'true',
+      userId: req.auth!.userId,
+    });
     res.json({ success: true, data: result });
   } catch (err) {
     next(err);

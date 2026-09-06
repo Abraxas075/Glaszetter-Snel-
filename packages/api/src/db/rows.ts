@@ -10,6 +10,7 @@ import type {
   Photo,
   Project,
   ProjectStatus,
+  Team,
   User,
   UserRole,
 } from '@glaszetter/shared';
@@ -130,6 +131,7 @@ export interface JobRow {
   status: JobStatus;
   due_date: Date | null;
   team_id: string | null;
+  scheduled_date: Date | null;
   notes: string | null;
   created_at: Date;
   updated_at: Date;
@@ -143,6 +145,7 @@ export const mapJobRow = (row: JobRow): Job => ({
   status: row.status,
   dueDate: row.due_date ?? undefined,
   teamId: row.team_id ?? undefined,
+  scheduledDate: row.scheduled_date ?? undefined,
   notes: row.notes ?? undefined,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
@@ -229,6 +232,25 @@ export const mapPhotoRow = (row: PhotoRow): Photo => ({
   contentType: row.content_type ?? undefined,
   sizeBytes: row.size_bytes ?? undefined,
   caption: row.caption ?? undefined,
+  createdAt: row.created_at,
+  updatedAt: row.updated_at,
+});
+
+export interface TeamRow {
+  id: string;
+  company_id: string;
+  name: string;
+  color: string | null;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export const mapTeamRow = (row: TeamRow, memberIds: string[]): Team => ({
+  id: row.id,
+  companyId: row.company_id,
+  name: row.name,
+  color: row.color ?? undefined,
+  memberIds,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });

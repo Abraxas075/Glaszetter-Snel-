@@ -4,10 +4,11 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import type { Route } from 'next';
 import Link from 'next/link';
-import type { Element, Job, JobStatus, Photo } from '@glaszetter/shared';
+import type { Element, Job, JobStatus, Photo, Team } from '@glaszetter/shared';
 import { getJob, updateJob } from '../../../../lib/jobs';
 import { listElements } from '../../../../lib/elements';
 import { listPhotos } from '../../../../lib/photos';
+import { listTeams } from '../../../../lib/teams';
 import { ApiError } from '../../../../lib/api';
 import { JOB_STATUSES, JOB_STATUS_LABELS } from '../../../../constants/statusLabels';
 import { ELEMENT_TYPE_LABELS } from '../../../../constants/elementTypeLabels';
@@ -21,10 +22,13 @@ export default function JobDetailPage() {
   const [elements, setElements] = useState<Element[] | null>(null);
   const [jobPhotos, setJobPhotos] = useState<Photo[]>([]);
   const [elementPhotoCounts, setElementPhotoCounts] = useState<Record<string, number>>({});
+  const [teams, setTeams] = useState<Team[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const [name, setName] = useState('');
   const [status, setStatus] = useState<JobStatus>('concept');
+  const [teamId, setTeamId] = useState('');
+  const [scheduledDate, setScheduledDate] = useState('');
   const [notes, setNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -36,9 +40,15 @@ export default function JobDetailPage() {
         setJob(j);
         setName(j.name);
         setStatus(j.status);
+        setTeamId(j.teamId ?? '');
+        setScheduledDate(j.scheduledDate ? String(j.scheduledDate).slice(0, 10) : '');
         setNotes(j.notes ?? '');
       })
       .catch(() => setError('Kon klus niet laden.'));
+
+    listTeams()
+      .then(setTeams)
+      .catch(() => {});
 
     listElements(jobId)
       .then((result) => {
@@ -64,6 +74,8 @@ export default function JobDetailPage() {
       const updated = await updateJob(jobId, {
         name: name.trim(),
         status,
+        teamId: teamId || undefined,
+        scheduledDate: scheduledDate || undefined,
         notes: notes.trim() || undefined,
       });
       setJob(updated);
@@ -106,6 +118,34 @@ export default function JobDetailPage() {
             </option>
           ))}
         </select>
+
+        <label style={formStyles.label} htmlFor="team">
+          Team
+        </label>
+        <select
+          id="team"
+          style={formStyles.select}
+          value={teamId}
+          onChange={(e) => setTeamId(e.target.value)}
+        >
+          <option value="">Geen team</option>
+          {teams.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.name}
+            </option>
+          ))}
+        </select>
+
+        <label style={formStyles.label} htmlFor="scheduledDate">
+          Geplande datum
+        </label>
+        <input
+          id="scheduledDate"
+          type="date"
+          style={formStyles.input}
+          value={scheduledDate}
+          onChange={(e) => setScheduledDate(e.target.value)}
+        />
 
         <label style={formStyles.label} htmlFor="notes">
           Notities

@@ -3,22 +3,31 @@
 import type { Route } from 'next';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '../contexts/AuthContext';
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Dashboard' },
   { href: '/dashboard/customers', label: 'Klanten' },
   { href: '/dashboard/projects', label: 'Projecten' },
   { href: '/dashboard/jobs', label: 'Klussen' },
+  { href: '/dashboard/planning', label: 'Planning' },
 ];
+
+const ADMIN_NAV_ITEMS = [{ href: '/dashboard/team', label: 'Team' }];
 
 export const Sidebar: React.FC = () => {
   const pathname = usePathname();
+  const { user } = useAuth();
+  const navItems =
+    user?.role === 'owner' || user?.role === 'admin'
+      ? [...NAV_ITEMS, ...ADMIN_NAV_ITEMS]
+      : NAV_ITEMS;
 
   return (
     <nav style={styles.sidebar}>
       <div style={styles.logo}>Glaszetter Snel</div>
       <ul style={styles.list}>
-        {NAV_ITEMS.map((item) => {
+        {navItems.map((item) => {
           const isActive =
             item.href === '/dashboard' ? pathname === item.href : pathname?.startsWith(item.href);
           return (

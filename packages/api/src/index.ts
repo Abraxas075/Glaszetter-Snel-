@@ -8,6 +8,8 @@ import { jobsRouter } from './routes/jobs';
 import { elementsRouter } from './routes/elements';
 import { measurementsRouter } from './routes/measurements';
 import { photosRouter } from './routes/photos';
+import { usersRouter } from './routes/users';
+import { teamsRouter } from './routes/teams';
 
 const app: Express = express();
 const PORT = process.env.PORT || 3001;
@@ -33,6 +35,8 @@ app.use('/api/v1/jobs', jobsRouter);
 app.use('/api/v1/elements', elementsRouter);
 app.use('/api/v1/measurements', measurementsRouter);
 app.use('/api/v1/photos', photosRouter);
+app.use('/api/v1/users', usersRouter);
+app.use('/api/v1/teams', teamsRouter);
 
 // Error handling
 interface HttpError extends Error {

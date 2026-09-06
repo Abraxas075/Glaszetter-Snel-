@@ -6,15 +6,27 @@ export interface JobInput {
   name: string;
   status?: JobStatus;
   dueDate?: string;
+  teamId?: string;
+  scheduledDate?: string;
   notes?: string;
+}
+
+export interface JobFilters {
+  projectId?: string;
+  teamId?: string;
+  scheduledFrom?: string;
+  scheduledTo?: string;
 }
 
 export const listJobs = (
   limit = 100,
-  filters: { projectId?: string } = {}
+  filters: JobFilters = {}
 ): Promise<PaginatedResponse<Job>> => {
   const params = new URLSearchParams({ limit: String(limit) });
   if (filters.projectId) params.set('projectId', filters.projectId);
+  if (filters.teamId) params.set('teamId', filters.teamId);
+  if (filters.scheduledFrom) params.set('scheduledFrom', filters.scheduledFrom);
+  if (filters.scheduledTo) params.set('scheduledTo', filters.scheduledTo);
   return apiRequest<PaginatedResponse<Job>>(`/jobs?${params.toString()}`);
 };
 

@@ -11,9 +11,14 @@ const NAV_ITEMS = [
   { href: '/dashboard/projects', label: 'Projecten' },
   { href: '/dashboard/jobs', label: 'Klussen' },
   { href: '/dashboard/planning', label: 'Planning' },
+  { href: '/dashboard/quotes', label: 'Offertes' },
+  { href: '/dashboard/invoices', label: 'Facturen' },
 ];
 
-const ADMIN_NAV_ITEMS = [{ href: '/dashboard/team', label: 'Team' }];
+const ADMIN_NAV_ITEMS = [
+  { href: '/dashboard/team', label: 'Team' },
+  { href: '/dashboard/settings', label: 'Instellingen' },
+];
 
 export const Sidebar: React.FC = () => {
   const pathname = usePathname();

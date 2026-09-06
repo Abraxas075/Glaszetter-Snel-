@@ -37,6 +37,7 @@ export interface Company {
   city?: string;
   postalCode?: string;
   country?: string;
+  iban?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -171,6 +172,67 @@ export interface Team {
   name: string;
   color?: string;
   memberIds: string[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Quote/Offerte
+export type QuoteStatus = 'concept' | 'sent' | 'approved' | 'rejected' | 'expired';
+
+export interface QuoteLine {
+  id: string;
+  quoteId: string;
+  elementId?: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+}
+
+export interface Quote {
+  id: string;
+  companyId: string;
+  jobId: string;
+  projectId: string;
+  quoteNumber: string;
+  status: QuoteStatus;
+  vatRate: number;
+  validUntil?: Date;
+  notes?: string;
+  lines: QuoteLine[];
+  subtotal: number;
+  vatAmount: number;
+  total: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Invoice/Factuur
+export type InvoiceStatus = 'concept' | 'sent' | 'paid' | 'overdue';
+
+export interface InvoiceLine {
+  id: string;
+  invoiceId: string;
+  elementId?: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+}
+
+export interface Invoice {
+  id: string;
+  companyId: string;
+  jobId: string;
+  projectId: string;
+  quoteId?: string;
+  invoiceNumber: string;
+  status: InvoiceStatus;
+  vatRate: number;
+  dueDate?: Date;
+  notes?: string;
+  lines: InvoiceLine[];
+  subtotal: number;
+  vatAmount: number;
+  total: number;
   createdAt: Date;
   updatedAt: Date;
 }

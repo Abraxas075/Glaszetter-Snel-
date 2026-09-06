@@ -3,6 +3,9 @@ import type {
   Customer,
   Element,
   ElementType,
+  Invoice,
+  InvoiceLine,
+  InvoiceStatus,
   Job,
   JobStatus,
   Measurement,
@@ -10,6 +13,9 @@ import type {
   Photo,
   Project,
   ProjectStatus,
+  Quote,
+  QuoteLine,
+  QuoteStatus,
   Team,
   User,
   UserRole,
@@ -28,6 +34,7 @@ export interface CompanyRow {
   city: string | null;
   postal_code: string | null;
   country: string | null;
+  iban: string | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -42,6 +49,7 @@ export const mapCompanyRow = (row: CompanyRow): Company => ({
   city: row.city ?? undefined,
   postalCode: row.postal_code ?? undefined,
   country: row.country ?? undefined,
+  iban: row.iban ?? undefined,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });
@@ -254,3 +262,119 @@ export const mapTeamRow = (row: TeamRow, memberIds: string[]): Team => ({
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });
+
+export interface QuoteLineRow {
+  id: string;
+  quote_id: string;
+  element_id: string | null;
+  description: string;
+  quantity: string;
+  unit_price: string;
+}
+
+export const mapQuoteLineRow = (row: QuoteLineRow): QuoteLine => ({
+  id: row.id,
+  quoteId: row.quote_id,
+  elementId: row.element_id ?? undefined,
+  description: row.description,
+  quantity: parseFloat(row.quantity),
+  unitPrice: parseFloat(row.unit_price),
+});
+
+export interface QuoteRow {
+  id: string;
+  company_id: string;
+  job_id: string;
+  project_id: string;
+  quote_number: string;
+  status: QuoteStatus;
+  vat_rate: string;
+  valid_until: Date | null;
+  notes: string | null;
+  created_at: Date;
+  updated_at: Date;
+}
+
+const roundMoney = (amount: number): number => Math.round(amount * 100) / 100;
+
+export const mapQuoteRow = (row: QuoteRow, lines: QuoteLine[]): Quote => {
+  const vatRate = parseFloat(row.vat_rate);
+  const subtotal = roundMoney(lines.reduce((sum, line) => sum + line.quantity * line.unitPrice, 0));
+  const vatAmount = roundMoney(subtotal * (vatRate / 100));
+
+  return {
+    id: row.id,
+    companyId: row.company_id,
+    jobId: row.job_id,
+    projectId: row.project_id,
+    quoteNumber: row.quote_number,
+    status: row.status,
+    vatRate,
+    validUntil: row.valid_until ?? undefined,
+    notes: row.notes ?? undefined,
+    lines,
+    subtotal,
+    vatAmount,
+    total: roundMoney(subtotal + vatAmount),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+};
+
+export interface InvoiceLineRow {
+  id: string;
+  invoice_id: string;
+  element_id: string | null;
+  description: string;
+  quantity: string;
+  unit_price: string;
+}
+
+export const mapInvoiceLineRow = (row: InvoiceLineRow): InvoiceLine => ({
+  id: row.id,
+  invoiceId: row.invoice_id,
+  elementId: row.element_id ?? undefined,
+  description: row.description,
+  quantity: parseFloat(row.quantity),
+  unitPrice: parseFloat(row.unit_price),
+});
+
+export interface InvoiceRow {
+  id: string;
+  company_id: string;
+  job_id: string;
+  project_id: string;
+  quote_id: string | null;
+  invoice_number: string;
+  status: InvoiceStatus;
+  vat_rate: string;
+  due_date: Date | null;
+  notes: string | null;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export const mapInvoiceRow = (row: InvoiceRow, lines: InvoiceLine[]): Invoice => {
+  const vatRate = parseFloat(row.vat_rate);
+  const subtotal = roundMoney(lines.reduce((sum, line) => sum + line.quantity * line.unitPrice, 0));
+  const vatAmount = roundMoney(subtotal * (vatRate / 100));
+
+  return {
+    id: row.id,
+    companyId: row.company_id,
+    jobId: row.job_id,
+    projectId: row.project_id,
+    quoteId: row.quote_id ?? undefined,
+    invoiceNumber: row.invoice_number,
+    status: row.status,
+    vatRate,
+    dueDate: row.due_date ?? undefined,
+    notes: row.notes ?? undefined,
+    lines,
+    subtotal,
+    vatAmount,
+    total: roundMoney(subtotal + vatAmount),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+};

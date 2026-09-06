@@ -46,3 +46,14 @@ export const apiRequest = async <T>(
 
   return body.data as T;
 };
+
+export const fetchBlob = async (path: string): Promise<Blob> => {
+  const token = getToken();
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!response.ok) {
+    throw new ApiError('Downloaden is mislukt', response.status, 'DOWNLOAD_FAILED');
+  }
+  return response.blob();
+};

@@ -291,6 +291,10 @@ export interface QuoteRow {
   vat_rate: string;
   valid_until: Date | null;
   notes: string | null;
+  public_token: string;
+  approved_at: Date | null;
+  rejected_at: Date | null;
+  rejection_reason: string | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -312,6 +316,10 @@ export const mapQuoteRow = (row: QuoteRow, lines: QuoteLine[]): Quote => {
     vatRate,
     validUntil: row.valid_until ?? undefined,
     notes: row.notes ?? undefined,
+    publicToken: row.public_token,
+    approvedAt: row.approved_at ?? undefined,
+    rejectedAt: row.rejected_at ?? undefined,
+    rejectionReason: row.rejection_reason ?? undefined,
     lines,
     subtotal,
     vatAmount,

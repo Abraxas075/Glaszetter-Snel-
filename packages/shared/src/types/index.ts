@@ -198,12 +198,22 @@ export interface Quote {
   vatRate: number;
   validUntil?: Date;
   notes?: string;
+  publicToken: string;
+  approvedAt?: Date;
+  rejectedAt?: Date;
+  rejectionReason?: string;
   lines: QuoteLine[];
   subtotal: number;
   vatAmount: number;
   total: number;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface PublicQuoteView {
+  quote: Quote;
+  company: Company;
+  customer: Customer;
 }
 
 // Invoice/Factuur

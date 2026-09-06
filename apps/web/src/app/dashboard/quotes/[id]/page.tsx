@@ -11,6 +11,7 @@ import {
   deleteQuoteLine,
   downloadQuotePdf,
   getQuote,
+  regenerateQuoteLink,
   updateQuote,
 } from '../../../../lib/quotes';
 import { listElements } from '../../../../lib/elements';
@@ -18,6 +19,9 @@ import { ApiError } from '../../../../lib/api';
 import { QUOTE_STATUSES, QUOTE_STATUS_LABELS } from '../../../../constants/statusLabels';
 import { pageStyles, formStyles } from '../../../../styles/shared';
 import { LineItemsEditor, type LineItemInput } from '../../../../components/LineItemsEditor';
+
+const formatDate = (date?: Date): string =>
+  date ? new Date(date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' }) : '-';
 
 export default function QuoteDetailPage() {
   const params = useParams<{ id: string }>();
@@ -37,6 +41,8 @@ export default function QuoteDetailPage() {
   const [saved, setSaved] = useState(false);
   const [convertError, setConvertError] = useState<string | null>(null);
   const [isConverting, setIsConverting] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const [isRegeneratingLink, setIsRegeneratingLink] = useState(false);
 
   const load = () => {
     getQuote(quoteId)
@@ -89,6 +95,26 @@ export default function QuoteDetailPage() {
     const blob = await downloadQuotePdf(quoteId);
     const url = URL.createObjectURL(blob);
     window.open(url, '_blank');
+  };
+
+  const handleCopyLink = async () => {
+    if (!quote) return;
+    const url = `${window.location.origin}/quote/${quote.publicToken}`;
+    await navigator.clipboard.writeText(url);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
+  };
+
+  const handleRegenerateLink = async () => {
+    setIsRegeneratingLink(true);
+    try {
+      const updated = await regenerateQuoteLink(quoteId);
+      setQuote(updated);
+    } catch {
+      // stil laten, gebruiker kan het opnieuw proberen
+    } finally {
+      setIsRegeneratingLink(false);
+    }
   };
 
   const handleConvert = async () => {
@@ -166,9 +192,15 @@ export default function QuoteDetailPage() {
         </button>
       </form>
 
-      <div style={{ display: 'flex', gap: 'var(--spacing-md)', marginTop: 'var(--spacing-lg)', marginBottom: 'var(--spacing-xl)' }}>
+      <div style={{ display: 'flex', gap: 'var(--spacing-md)', marginTop: 'var(--spacing-lg)', flexWrap: 'wrap' }}>
         <button type="button" style={pageStyles.primaryButton} onClick={handleDownloadPdf}>
           Download PDF
+        </button>
+        <button type="button" style={pageStyles.primaryButton} onClick={handleCopyLink}>
+          {linkCopied ? 'Gekopieerd!' : 'Kopieer klantlink'}
+        </button>
+        <button type="button" style={pageStyles.primaryButton} onClick={handleRegenerateLink} disabled={isRegeneratingLink}>
+          {isRegeneratingLink ? 'Bezig...' : 'Vernieuw link'}
         </button>
         {quote.status === 'approved' && (
           <button type="button" style={pageStyles.primaryButton} onClick={handleConvert} disabled={isConverting}>
@@ -177,6 +209,24 @@ export default function QuoteDetailPage() {
         )}
       </div>
       {convertError && <p style={pageStyles.error}>{convertError}</p>}
+
+      {(quote.approvedAt || quote.rejectedAt) && (
+        <div style={{ ...formStyles.card, marginTop: 'var(--spacing-lg)', backgroundColor: 'var(--color-background)' }}>
+          {quote.approvedAt && <p>✓ Klant heeft goedgekeurd op {formatDate(quote.approvedAt)}.</p>}
+          {quote.rejectedAt && (
+            <>
+              <p>Klant heeft afgewezen op {formatDate(quote.rejectedAt)}.</p>
+              {quote.rejectionReason && (
+                <p style={{ marginTop: 'var(--spacing-sm)', color: 'var(--color-text-secondary)' }}>
+                  Reden: {quote.rejectionReason}
+                </p>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      <div style={{ marginTop: 'var(--spacing-xl)' }} />
 
       <h2 style={{ ...pageStyles.title, fontSize: 18, marginBottom: 'var(--spacing-md)' }}>Regels</h2>
       <LineItemsEditor

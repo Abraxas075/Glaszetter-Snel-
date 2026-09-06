@@ -9,6 +9,7 @@ import {
   deleteQuoteLine,
   getQuote,
   listQuotes,
+  regeneratePublicToken,
   updateQuote,
   QuoteNotApprovedError,
   type QuoteInput,
@@ -165,6 +166,18 @@ quotesRouter.post(
     try {
       const result = await convertQuoteToInvoice(req.auth!.companyId, req.params.id);
       res.status(201).json({ success: true, data: result });
+    } catch (err) {
+      handleError(err, res, next);
+    }
+  }
+);
+
+quotesRouter.post(
+  '/:id/regenerate-link',
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const quote = await regeneratePublicToken(req.auth!.companyId, req.params.id);
+      res.json({ success: true, data: quote });
     } catch (err) {
       handleError(err, res, next);
     }

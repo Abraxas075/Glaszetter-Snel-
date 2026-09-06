@@ -43,3 +43,6 @@ export const convertQuoteToInvoice = (quoteId: string): Promise<{ invoiceId: str
   apiRequest<{ invoiceId: string }>(`/quotes/${quoteId}/convert-to-invoice`, { method: 'POST' });
 
 export const downloadQuotePdf = (id: string): Promise<Blob> => fetchBlob(`/quotes/${id}/pdf`);
+
+export const regenerateQuoteLink = (id: string): Promise<Quote> =>
+  apiRequest<Quote>(`/quotes/${id}/regenerate-link`, { method: 'POST' });

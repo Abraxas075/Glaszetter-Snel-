@@ -13,6 +13,7 @@ import { teamsRouter } from './routes/teams';
 import { companiesRouter } from './routes/companies';
 import { quotesRouter } from './routes/quotes';
 import { invoicesRouter } from './routes/invoices';
+import { publicQuotesRouter } from './routes/publicQuotes';
 
 const app: Express = express();
 const PORT = process.env.PORT || 3001;
@@ -43,6 +44,7 @@ app.use('/api/v1/teams', teamsRouter);
 app.use('/api/v1/companies', companiesRouter);
 app.use('/api/v1/quotes', quotesRouter);
 app.use('/api/v1/invoices', invoicesRouter);
+app.use('/api/v1/public/quotes', publicQuotesRouter);
 
 // Error handling
 interface HttpError extends Error {

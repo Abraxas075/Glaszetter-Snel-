@@ -32,6 +32,13 @@ export class QuoteNotApprovedError extends Error {
   }
 }
 
+export class QuoteAlreadyDecidedError extends Error {
+  constructor() {
+    super('This quote has already been approved or rejected');
+    this.name = 'QuoteAlreadyDecidedError';
+  }
+}
+
 const generateQuoteNumber = async (companyId: string): Promise<string> => {
   const year = new Date().getFullYear();
   const prefix = `OFF-${year}-`;
@@ -127,6 +134,8 @@ export const updateQuote = async (
        vat_rate = COALESCE($4, vat_rate),
        valid_until = COALESCE($5, valid_until),
        notes = COALESCE($6, notes),
+       approved_at = CASE WHEN $3::quote_status = 'approved' THEN now() ELSE approved_at END,
+       rejected_at = CASE WHEN $3::quote_status = 'rejected' THEN now() ELSE rejected_at END,
        updated_at = now()
      WHERE id = $1 AND company_id = $2
      RETURNING *`,
@@ -138,6 +147,57 @@ export const updateQuote = async (
       input.validUntil ?? null,
       input.notes ?? null,
     ]
+  );
+  return mapQuoteRow(result.rows[0], existing.lines);
+};
+
+export const getQuoteByPublicToken = async (token: string): Promise<Quote> => {
+  const result = await pool.query<QuoteRow>('SELECT * FROM quotes WHERE public_token = $1', [
+    token,
+  ]);
+  const row = result.rows[0];
+  if (!row) throw new NotFoundError('Quote');
+  const lineMap = await getLinesForQuotes([row.id]);
+  return mapQuoteRow(row, lineMap.get(row.id) ?? []);
+};
+
+const assertNotDecided = (quote: Quote): void => {
+  if (quote.status === 'approved' || quote.status === 'rejected') {
+    throw new QuoteAlreadyDecidedError();
+  }
+};
+
+export const approveQuoteByToken = async (token: string): Promise<Quote> => {
+  const quote = await getQuoteByPublicToken(token);
+  assertNotDecided(quote);
+
+  const result = await pool.query<QuoteRow>(
+    `UPDATE quotes SET status = 'approved', approved_at = now(), updated_at = now()
+     WHERE public_token = $1 RETURNING *`,
+    [token]
+  );
+  return mapQuoteRow(result.rows[0], quote.lines);
+};
+
+export const rejectQuoteByToken = async (token: string, reason?: string): Promise<Quote> => {
+  const quote = await getQuoteByPublicToken(token);
+  assertNotDecided(quote);
+
+  const result = await pool.query<QuoteRow>(
+    `UPDATE quotes SET status = 'rejected', rejected_at = now(), rejection_reason = $2, updated_at = now()
+     WHERE public_token = $1 RETURNING *`,
+    [token, reason ?? null]
+  );
+  return mapQuoteRow(result.rows[0], quote.lines);
+};
+
+export const regeneratePublicToken = async (companyId: string, id: string): Promise<Quote> => {
+  const existing = await getQuote(companyId, id); // ensures existence + tenant ownership
+
+  const result = await pool.query<QuoteRow>(
+    `UPDATE quotes SET public_token = gen_random_uuid(), updated_at = now()
+     WHERE id = $1 AND company_id = $2 RETURNING *`,
+    [id, companyId]
   );
   return mapQuoteRow(result.rows[0], existing.lines);
 };

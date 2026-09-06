@@ -4,9 +4,10 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import type { Route } from 'next';
 import Link from 'next/link';
-import type { Element, Job, JobStatus } from '@glaszetter/shared';
+import type { Element, Job, JobStatus, Photo } from '@glaszetter/shared';
 import { getJob, updateJob } from '../../../../lib/jobs';
 import { listElements } from '../../../../lib/elements';
+import { listPhotos } from '../../../../lib/photos';
 import { ApiError } from '../../../../lib/api';
 import { JOB_STATUSES, JOB_STATUS_LABELS } from '../../../../constants/statusLabels';
 import { ELEMENT_TYPE_LABELS } from '../../../../constants/elementTypeLabels';
@@ -18,6 +19,8 @@ export default function JobDetailPage() {
 
   const [job, setJob] = useState<Job | null>(null);
   const [elements, setElements] = useState<Element[] | null>(null);
+  const [jobPhotos, setJobPhotos] = useState<Photo[]>([]);
+  const [elementPhotoCounts, setElementPhotoCounts] = useState<Record<string, number>>({});
   const [error, setError] = useState<string | null>(null);
 
   const [name, setName] = useState('');
@@ -38,8 +41,18 @@ export default function JobDetailPage() {
       .catch(() => setError('Kon klus niet laden.'));
 
     listElements(jobId)
-      .then((result) => setElements(result.data))
+      .then((result) => {
+        setElements(result.data);
+        return Promise.all(
+          result.data.map((el) =>
+            listPhotos({ elementId: el.id }).then((photos) => [el.id, photos.length] as const)
+          )
+        );
+      })
+      .then((counts) => setElementPhotoCounts(Object.fromEntries(counts)))
       .catch(() => {});
+
+    listPhotos({ jobId }).then(setJobPhotos).catch(() => {});
   }, [jobId]);
 
   const handleSave = async (e: React.FormEvent) => {
@@ -108,6 +121,23 @@ export default function JobDetailPage() {
       </form>
 
       <h2 style={{ ...pageStyles.title, fontSize: 18, marginTop: 'var(--spacing-xxl)' }}>
+        Klusfoto's
+      </h2>
+      <p style={{ ...pageStyles.empty, marginBottom: 'var(--spacing-md)' }}>
+        Foto's worden toegevoegd via de mobiele app.
+      </p>
+
+      {jobPhotos.length === 0 && <p style={pageStyles.empty}>Nog geen klusfoto's.</p>}
+
+      {jobPhotos.length > 0 && (
+        <div style={photoGalleryStyle}>
+          {jobPhotos.map((photo) => (
+            <img key={photo.id} src={photo.url} alt={photo.caption ?? ''} style={photoThumbStyle} />
+          ))}
+        </div>
+      )}
+
+      <h2 style={{ ...pageStyles.title, fontSize: 18, marginTop: 'var(--spacing-xxl)' }}>
         Ingemeten elementen
       </h2>
       <p style={{ ...pageStyles.empty, marginBottom: 'var(--spacing-md)' }}>
@@ -126,6 +156,7 @@ export default function JobDetailPage() {
               <th style={pageStyles.th}>Code</th>
               <th style={pageStyles.th}>Type</th>
               <th style={pageStyles.th}>Locatie</th>
+              <th style={pageStyles.th}>Foto's</th>
             </tr>
           </thead>
           <tbody>
@@ -134,6 +165,7 @@ export default function JobDetailPage() {
                 <td style={pageStyles.td}>{el.code}</td>
                 <td style={pageStyles.td}>{ELEMENT_TYPE_LABELS[el.type]}</td>
                 <td style={pageStyles.td}>{el.location ?? '—'}</td>
+                <td style={pageStyles.td}>{elementPhotoCounts[el.id] ?? 0}</td>
               </tr>
             ))}
           </tbody>
@@ -142,3 +174,18 @@ export default function JobDetailPage() {
     </div>
   );
 }
+
+const photoGalleryStyle: React.CSSProperties = {
+  display: 'flex',
+  gap: 'var(--spacing-md)',
+  flexWrap: 'wrap',
+  marginBottom: 'var(--spacing-md)',
+};
+
+const photoThumbStyle: React.CSSProperties = {
+  width: 96,
+  height: 96,
+  objectFit: 'cover',
+  borderRadius: 'var(--radius-md)',
+  border: '1px solid var(--color-border)',
+};

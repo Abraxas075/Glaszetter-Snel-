@@ -7,6 +7,7 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import type { ElementType } from '@glaszetter/shared';
 import { useRouter } from 'expo-router';
@@ -15,7 +16,9 @@ import { Button } from '../components/Button';
 import { ApiError } from '../api/client';
 import { createElementWithMeasurement, suggestNextCode } from '../api/elements';
 import { parseVoiceTranscript } from '../api/measurements';
+import { uploadPhoto, type PickedPhoto } from '../api/photos';
 import { useVoiceCapture } from '../hooks/useVoiceCapture';
+import { pickPhotoFromLibrary, takePhotoWithCamera } from '../hooks/usePhotoPicker';
 import { ELEMENT_TYPE_LABELS, ELEMENT_TYPES } from '../constants/elementTypes';
 import { colors, spacing, radius } from '../constants/colors';
 
@@ -38,6 +41,7 @@ export const NewMeasurementScreen: React.FC<NewMeasurementScreenProps> = ({ jobI
   const [height, setHeight] = useState('');
   const [glassType, setGlassType] = useState('');
   const [notes, setNotes] = useState('');
+  const [photos, setPhotos] = useState<PickedPhoto[]>([]);
 
   const [isParsing, setIsParsing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -74,6 +78,20 @@ export const NewMeasurementScreen: React.FC<NewMeasurementScreenProps> = ({ jobI
     }
   };
 
+  const handlePickPhoto = async () => {
+    const photo = await pickPhotoFromLibrary();
+    if (photo) setPhotos((prev) => [...prev, photo]);
+  };
+
+  const handleTakePhoto = async () => {
+    const photo = await takePhotoWithCamera();
+    if (photo) setPhotos((prev) => [...prev, photo]);
+  };
+
+  const handleRemovePhoto = (index: number) => {
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleSave = async () => {
     if (!token) return;
     setError(null);
@@ -96,7 +114,7 @@ export const NewMeasurementScreen: React.FC<NewMeasurementScreenProps> = ({ jobI
 
     setIsSaving(true);
     try {
-      await createElementWithMeasurement(token, {
+      const { element } = await createElementWithMeasurement(token, {
         jobId,
         code: code.trim(),
         type,
@@ -106,6 +124,27 @@ export const NewMeasurementScreen: React.FC<NewMeasurementScreenProps> = ({ jobI
         glassType: glassType.trim() || undefined,
         measurementNotes: notes.trim() || undefined,
       });
+
+      let failedPhotoCount = 0;
+      for (const photo of photos) {
+        try {
+          await uploadPhoto(token, photo, { elementId: element.id });
+        } catch {
+          failedPhotoCount += 1;
+        }
+      }
+
+      if (failedPhotoCount > 0) {
+        // Element + measurement are already saved - stay on screen so the
+        // user actually sees which photos didn't make it, instead of
+        // navigating away over the error.
+        setError(
+          `Element opgeslagen, maar ${failedPhotoCount} foto('s) konden niet worden geüpload.`
+        );
+        setPhotos([]);
+        return;
+      }
+
       router.back();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Opslaan is mislukt.');
@@ -254,6 +293,32 @@ export const NewMeasurementScreen: React.FC<NewMeasurementScreenProps> = ({ jobI
             multiline
           />
 
+          <Text style={styles.label}>Foto's</Text>
+          <View style={styles.photoActions}>
+            <TouchableOpacity style={styles.photoActionButton} onPress={handleTakePhoto}>
+              <Text style={styles.photoActionText}>📷 Foto maken</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.photoActionButton} onPress={handlePickPhoto}>
+              <Text style={styles.photoActionText}>🖼️ Uit galerij</Text>
+            </TouchableOpacity>
+          </View>
+
+          {photos.length > 0 && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photoRow}>
+              {photos.map((photo, index) => (
+                <View key={`${photo.uri}-${index}`} style={styles.photoThumbWrapper}>
+                  <Image source={{ uri: photo.uri }} style={styles.photoThumb} fadeDuration={0} />
+                  <TouchableOpacity
+                    style={styles.photoRemoveButton}
+                    onPress={() => handleRemovePhoto(index)}
+                  >
+                    <Text style={styles.photoRemoveText}>×</Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </ScrollView>
+          )}
+
           <Button
             label={isSaving ? 'Opslaan...' : 'Opslaan'}
             onPress={handleSave}
@@ -376,6 +441,54 @@ const styles = StyleSheet.create({
   },
   dimensionField: {
     flex: 1,
+  },
+  photoActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  photoActionButton: {
+    flex: 1,
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+  },
+  photoActionText: {
+    fontSize: 14,
+    color: colors.textPrimary,
+    fontWeight: '600',
+  },
+  photoRow: {
+    marginTop: spacing.md,
+  },
+  photoThumbWrapper: {
+    position: 'relative',
+    marginRight: spacing.sm,
+  },
+  photoThumb: {
+    width: 80,
+    height: 80,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+  },
+  photoRemoveButton: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: colors.error,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  photoRemoveText: {
+    color: colors.background,
+    fontSize: 14,
+    fontWeight: '700',
+    lineHeight: 16,
   },
   saveButton: {
     marginTop: spacing.xl,

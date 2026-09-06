@@ -1,9 +1,20 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
-import type { Element } from '@glaszetter/shared';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  TouchableOpacity,
+} from 'react-native';
+import type { Element, Photo } from '@glaszetter/shared';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '../contexts/AuthContext';
 import { listElements } from '../api/elements';
+import { listPhotos, uploadPhoto } from '../api/photos';
+import { pickPhotoFromLibrary, takePhotoWithCamera } from '../hooks/usePhotoPicker';
 import { Button } from '../components/Button';
 import { ELEMENT_TYPE_LABELS } from '../constants/elementTypes';
 import { colors, spacing, radius } from '../constants/colors';
@@ -17,6 +28,9 @@ export const ElementListScreen: React.FC<ElementListScreenProps> = ({ jobId }) =
   const { token } = useAuth();
   const [elements, setElements] = useState<Element[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [photos, setPhotos] = useState<Photo[]>([]);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
 
   const load = useCallback(() => {
     if (!token) return;
@@ -25,8 +39,34 @@ export const ElementListScreen: React.FC<ElementListScreenProps> = ({ jobId }) =
       .catch(() => setError('Kon elementen niet laden.'));
   }, [token, jobId]);
 
+  const loadPhotos = useCallback(() => {
+    if (!token) return;
+    listPhotos(token, { jobId })
+      .then(setPhotos)
+      .catch(() => {});
+  }, [token, jobId]);
+
   useEffect(load, [load]);
+  useEffect(loadPhotos, [loadPhotos]);
   useFocusEffect(load);
+  useFocusEffect(loadPhotos);
+
+  const handleAddPhoto = async (fromCamera: boolean) => {
+    if (!token) return;
+    const photo = fromCamera ? await takePhotoWithCamera() : await pickPhotoFromLibrary();
+    if (!photo) return;
+
+    setPhotoError(null);
+    setIsUploadingPhoto(true);
+    try {
+      const uploaded = await uploadPhoto(token, photo, { jobId });
+      setPhotos((prev) => [uploaded, ...prev]);
+    } catch {
+      setPhotoError('Foto uploaden is mislukt.');
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -37,6 +77,46 @@ export const ElementListScreen: React.FC<ElementListScreenProps> = ({ jobId }) =
           onPress={() => router.push(`/jobs/${jobId}/elements/new`)}
           style={styles.newButton}
         />
+      </View>
+
+      <View style={styles.photoSection}>
+        <Text style={styles.sectionTitle}>Klusfoto's</Text>
+        <View style={styles.photoActions}>
+          <TouchableOpacity
+            style={styles.photoActionButton}
+            onPress={() => handleAddPhoto(true)}
+            disabled={isUploadingPhoto}
+          >
+            <Text style={styles.photoActionText}>📷 Foto maken</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.photoActionButton}
+            onPress={() => handleAddPhoto(false)}
+            disabled={isUploadingPhoto}
+          >
+            <Text style={styles.photoActionText}>🖼️ Uit galerij</Text>
+          </TouchableOpacity>
+        </View>
+
+        {isUploadingPhoto && <ActivityIndicator color={colors.primary} style={styles.uploadSpinner} />}
+        {photoError && <Text style={styles.error}>{photoError}</Text>}
+
+        {photos.length === 0 && !isUploadingPhoto && (
+          <Text style={styles.emptyPhotos}>Nog geen klusfoto's.</Text>
+        )}
+
+        {photos.length > 0 && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photoRow}>
+            {photos.map((photo) => (
+              <Image
+                key={photo.id}
+                source={{ uri: photo.url }}
+                style={styles.photoThumb}
+                fadeDuration={0}
+              />
+            ))}
+          </ScrollView>
+        )}
       </View>
 
       {error && <Text style={styles.error}>{error}</Text>}
@@ -119,7 +199,54 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   error: {
-    padding: spacing.xl,
+    paddingHorizontal: spacing.lg,
     color: colors.error,
+  },
+  photoSection: {
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    marginBottom: spacing.sm,
+  },
+  photoActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  photoActionButton: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+  },
+  photoActionText: {
+    fontSize: 13,
+    color: colors.textPrimary,
+    fontWeight: '600',
+  },
+  uploadSpinner: {
+    marginTop: spacing.sm,
+  },
+  emptyPhotos: {
+    marginTop: spacing.sm,
+    fontSize: 13,
+    color: colors.textSecondary,
+  },
+  photoRow: {
+    marginTop: spacing.md,
+  },
+  photoThumb: {
+    width: 72,
+    height: 72,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+    marginRight: spacing.sm,
   },
 });

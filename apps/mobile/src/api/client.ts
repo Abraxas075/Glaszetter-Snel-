@@ -18,11 +18,13 @@ export const apiRequest = async <T>(
   options: RequestInit & { token?: string | null } = {}
 ): Promise<T> => {
   const { token, headers, ...rest } = options;
+  const isFormData = typeof FormData !== 'undefined' && rest.body instanceof FormData;
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...rest,
     headers: {
-      'Content-Type': 'application/json',
+      // Let fetch set the multipart boundary itself for FormData bodies.
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...headers,
     },

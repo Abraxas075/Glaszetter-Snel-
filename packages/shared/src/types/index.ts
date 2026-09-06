@@ -148,6 +148,21 @@ export type MeasurementStatus =
   | 'reviewed'
   | 'approved';
 
+// Photo
+export interface Photo {
+  id: string;
+  companyId: string;
+  jobId?: string;
+  elementId?: string;
+  url: string;
+  originalFilename?: string;
+  contentType?: string;
+  sizeBytes?: number;
+  caption?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // API Response
 export interface ApiResponse<T> {
   success: boolean;

@@ -7,6 +7,7 @@ import type {
   JobStatus,
   Measurement,
   MeasurementStatus,
+  Photo,
   Project,
   ProjectStatus,
   User,
@@ -199,6 +200,35 @@ export const mapMeasurementRow = (row: MeasurementRow): Measurement => ({
   photos: row.photos.length > 0 ? row.photos : undefined,
   voiceMemos: row.voice_memos.length > 0 ? row.voice_memos : undefined,
   status: row.status,
+  createdAt: row.created_at,
+  updatedAt: row.updated_at,
+});
+
+export interface PhotoRow {
+  id: string;
+  company_id: string;
+  job_id: string | null;
+  element_id: string | null;
+  storage_key: string;
+  url: string;
+  original_filename: string | null;
+  content_type: string | null;
+  size_bytes: number | null;
+  caption: string | null;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export const mapPhotoRow = (row: PhotoRow): Photo => ({
+  id: row.id,
+  companyId: row.company_id,
+  jobId: row.job_id ?? undefined,
+  elementId: row.element_id ?? undefined,
+  url: row.url,
+  originalFilename: row.original_filename ?? undefined,
+  contentType: row.content_type ?? undefined,
+  sizeBytes: row.size_bytes ?? undefined,
+  caption: row.caption ?? undefined,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });

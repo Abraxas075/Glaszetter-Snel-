@@ -2,7 +2,7 @@
   "name": "@glaszetter/api",
   "version": "0.0.1",
   "private": true,
-  "type": "module",
+  "type": "commonjs",
   "main": "./dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",

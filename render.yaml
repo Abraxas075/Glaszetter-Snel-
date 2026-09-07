@@ -10,7 +10,7 @@ services:
     runtime: node
     plan: free
     branch: claude/best-model-low-cost-qpdxzm
-    buildCommand: npm install && npm run build -w packages/shared -w packages/api && npm run migrate -w packages/api
+    buildCommand: npm install && npm run build -w packages/shared -w packages/api && npm run migrate -w packages/api && npm run seed -w packages/api
     startCommand: npm run start -w packages/api
     envVars:
       - key: NODE_ENV

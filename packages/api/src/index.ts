@@ -7,6 +7,13 @@ import { projectsRouter } from './routes/projects';
 import { jobsRouter } from './routes/jobs';
 import { elementsRouter } from './routes/elements';
 import { measurementsRouter } from './routes/measurements';
+import { photosRouter } from './routes/photos';
+import { usersRouter } from './routes/users';
+import { teamsRouter } from './routes/teams';
+import { companiesRouter } from './routes/companies';
+import { quotesRouter } from './routes/quotes';
+import { invoicesRouter } from './routes/invoices';
+import { publicQuotesRouter } from './routes/publicQuotes';
 
 const app: Express = express();
 const PORT = process.env.PORT || 3001;
@@ -31,6 +38,13 @@ app.use('/api/v1/projects', projectsRouter);
 app.use('/api/v1/jobs', jobsRouter);
 app.use('/api/v1/elements', elementsRouter);
 app.use('/api/v1/measurements', measurementsRouter);
+app.use('/api/v1/photos', photosRouter);
+app.use('/api/v1/users', usersRouter);
+app.use('/api/v1/teams', teamsRouter);
+app.use('/api/v1/companies', companiesRouter);
+app.use('/api/v1/quotes', quotesRouter);
+app.use('/api/v1/invoices', invoicesRouter);
+app.use('/api/v1/public/quotes', publicQuotesRouter);
 
 // Error handling
 interface HttpError extends Error {

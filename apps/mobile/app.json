@@ -34,6 +34,13 @@
           "microphonePermission": "Sta toe dat Glaszetter Snel je microfoon gebruikt voor spraak-inmeten.",
           "speechRecognitionPermission": "Sta toe dat Glaszetter Snel spraak omzet naar tekst voor spraak-inmeten."
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Sta toe dat Glaszetter Snel foto's uit je bibliotheek gebruikt voor het documenteren van klussen en elementen.",
+          "cameraPermission": "Sta toe dat Glaszetter Snel je camera gebruikt om foto's te maken van klussen en elementen."
+        }
       ]
     ],
     "scheme": "glaszettersnel"

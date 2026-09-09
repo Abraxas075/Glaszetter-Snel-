@@ -1,0 +1,39 @@
+databases:
+  - name: glaszetter-db
+    plan: free
+    databaseName: glaszetter_snel
+    user: glaszetter
+
+services:
+  - type: web
+    name: glaszetter-api
+    runtime: node
+    plan: free
+    branch: claude/best-model-low-cost-qpdxzm
+    buildCommand: npm install && npm run build -w packages/shared -w packages/api && npm run migrate -w packages/api && npm run seed -w packages/api
+    startCommand: npm run start -w packages/api
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: glaszetter-db
+          property: connectionString
+      - key: CORS_ORIGIN
+        value: http://localhost:3000
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: S3_ENDPOINT
+        sync: false
+      - key: S3_REGION
+        sync: false
+      - key: S3_BUCKET
+        sync: false
+      - key: S3_ACCESS_KEY_ID
+        sync: false
+      - key: S3_SECRET_ACCESS_KEY
+        sync: false
+      - key: S3_PUBLIC_URL_BASE
+        sync: false

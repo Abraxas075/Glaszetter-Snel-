@@ -37,6 +37,7 @@ export interface Company {
   city?: string;
   postalCode?: string;
   country?: string;
+  iban?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -82,6 +83,7 @@ export interface Job {
   status: JobStatus;
   dueDate?: Date;
   teamId?: string;
+  scheduledDate?: Date;
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -147,6 +149,103 @@ export type MeasurementStatus =
   | 'submitted'
   | 'reviewed'
   | 'approved';
+
+// Photo
+export interface Photo {
+  id: string;
+  companyId: string;
+  jobId?: string;
+  elementId?: string;
+  url: string;
+  originalFilename?: string;
+  contentType?: string;
+  sizeBytes?: number;
+  caption?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Team
+export interface Team {
+  id: string;
+  companyId: string;
+  name: string;
+  color?: string;
+  memberIds: string[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Quote/Offerte
+export type QuoteStatus = 'concept' | 'sent' | 'approved' | 'rejected' | 'expired';
+
+export interface QuoteLine {
+  id: string;
+  quoteId: string;
+  elementId?: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+}
+
+export interface Quote {
+  id: string;
+  companyId: string;
+  jobId: string;
+  projectId: string;
+  quoteNumber: string;
+  status: QuoteStatus;
+  vatRate: number;
+  validUntil?: Date;
+  notes?: string;
+  publicToken: string;
+  approvedAt?: Date;
+  rejectedAt?: Date;
+  rejectionReason?: string;
+  lines: QuoteLine[];
+  subtotal: number;
+  vatAmount: number;
+  total: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface PublicQuoteView {
+  quote: Quote;
+  company: Company;
+  customer: Customer;
+}
+
+// Invoice/Factuur
+export type InvoiceStatus = 'concept' | 'sent' | 'paid' | 'overdue';
+
+export interface InvoiceLine {
+  id: string;
+  invoiceId: string;
+  elementId?: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+}
+
+export interface Invoice {
+  id: string;
+  companyId: string;
+  jobId: string;
+  projectId: string;
+  quoteId?: string;
+  invoiceNumber: string;
+  status: InvoiceStatus;
+  vatRate: number;
+  dueDate?: Date;
+  notes?: string;
+  lines: InvoiceLine[];
+  subtotal: number;
+  vatAmount: number;
+  total: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 // API Response
 export interface ApiResponse<T> {

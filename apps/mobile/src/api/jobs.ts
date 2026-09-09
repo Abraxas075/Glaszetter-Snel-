@@ -3,3 +3,6 @@ import { apiRequest } from './client';
 
 export const listJobs = (token: string): Promise<PaginatedResponse<Job>> =>
   apiRequest<PaginatedResponse<Job>>('/jobs?limit=100', { token });
+
+export const listMyJobs = (token: string): Promise<PaginatedResponse<Job>> =>
+  apiRequest<PaginatedResponse<Job>>('/jobs?limit=100&mine=true', { token });

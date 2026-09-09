@@ -7,9 +7,9 @@ databases:
 services:
   - type: web
     name: glaszetter-api
-    runtime: node
+    env: node
     plan: free
-    branch: claude/best-model-low-cost-qpdxzm
+    branch: main
     buildCommand: npm install && npm run build -w packages/shared -w packages/api && npm run migrate -w packages/api && npm run seed -w packages/api
     startCommand: npm run start -w packages/api
     envVars:

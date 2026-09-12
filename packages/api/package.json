@@ -36,7 +36,7 @@
     "@types/cors": "^2.8.17",
     "@types/multer": "^2.2.0",
     "@types/pdfkit": "^0.17.6",
-    "typescript": "*",
+    "typescript": "5.9.3",
     "tsx": "^4.7.0",
     "node-pg-migrate": "^7.6.1"
   },

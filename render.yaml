@@ -10,7 +10,7 @@ services:
     env: node
     plan: free
     branch: main
-    buildCommand: npm install && npm run build -w packages/shared -w packages/api && npm run migrate -w packages/api && npm run seed -w packages/api
+    buildCommand: rm -rf node_modules packages/*/node_modules apps/*/node_modules && npm install && npm run build -w packages/shared -w packages/api && npm run migrate -w packages/api && npm run seed -w packages/api
     startCommand: npm run start -w packages/api
     envVars:
       - key: NODE_ENV

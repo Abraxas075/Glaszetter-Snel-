@@ -10,7 +10,7 @@ services:
     env: node
     plan: free
     branch: main
-    buildCommand: rm -rf node_modules packages/*/node_modules apps/*/node_modules && npm install && node -e "console.log('DIAGNOSTIC node =', process.version); console.log('DIAGNOSTIC root typescript =', require('./node_modules/typescript/package.json').version); try { console.log('DIAGNOSTIC api typescript =', require('./packages/api/node_modules/typescript/package.json').version); } catch (e) { console.log('DIAGNOSTIC api typescript = not nested, uses root'); }" && npm run build -w packages/shared -w packages/api && npm run migrate -w packages/api && npm run seed -w packages/api
+    buildCommand: rm -rf node_modules packages/*/node_modules apps/*/node_modules && npm install --include=dev && npm run build -w packages/shared -w packages/api && npm run migrate -w packages/api && npm run seed -w packages/api
     startCommand: npm run start -w packages/api
     envVars:
       - key: NODE_ENV

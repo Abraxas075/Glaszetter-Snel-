@@ -14,6 +14,7 @@ import {
 } from '../../../../lib/invoices';
 import { listElements } from '../../../../lib/elements';
 import { ApiError } from '../../../../lib/api';
+import { parseVatRate } from '../../../../lib/vat';
 import { INVOICE_STATUSES, INVOICE_STATUS_LABELS } from '../../../../constants/statusLabels';
 import { pageStyles, formStyles } from '../../../../styles/shared';
 import { LineItemsEditor, type LineItemInput } from '../../../../components/LineItemsEditor';
@@ -54,11 +55,16 @@ export default function InvoiceDetailPage() {
     e.preventDefault();
     setSaveError(null);
     setSaved(false);
+    const parsedVatRate = parseVatRate(vatRate);
+    if (parsedVatRate === null) {
+      setSaveError('Vul een btw-percentage tussen 0 en 100 in.');
+      return;
+    }
     setIsSaving(true);
     try {
       const updated = await updateInvoice(invoiceId, {
         status,
-        vatRate: parseFloat(vatRate.replace(',', '.')) || undefined,
+        vatRate: parsedVatRate,
         dueDate: dueDate || undefined,
         notes: notes.trim() || undefined,
       });
@@ -141,6 +147,9 @@ export default function InvoiceDetailPage() {
         <input
           id="vatRate"
           type="number"
+          required
+          min="0"
+          max="100"
           step="0.01"
           style={formStyles.input}
           value={vatRate}

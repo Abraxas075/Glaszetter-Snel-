@@ -14,13 +14,15 @@
     "build": "npm run build --workspaces",
     "lint": "npm run lint --workspaces",
     "type-check": "npm run type-check --workspaces",
-    "test": "npm run test --workspaces"
+    "test": "node --import tsx --test tests/*.test.ts"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
     "eslint": "^8.54.0",
     "prettier": "^3.1.0",
+    "tsx": "^4.23.13",
     "typescript": "5.9.3"
   },
   "engines": {

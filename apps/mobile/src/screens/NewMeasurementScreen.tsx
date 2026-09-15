@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -21,6 +21,7 @@ import { useVoiceCapture } from '../hooks/useVoiceCapture';
 import { pickPhotoFromLibrary, takePhotoWithCamera } from '../hooks/usePhotoPicker';
 import { ELEMENT_TYPE_LABELS, ELEMENT_TYPES } from '../constants/elementTypes';
 import { colors, spacing, radius } from '../constants/colors';
+import { createMeasurementSaveSession } from '../utils/measurementSave';
 
 interface NewMeasurementScreenProps {
   jobId: string;
@@ -32,6 +33,7 @@ export const NewMeasurementScreen: React.FC<NewMeasurementScreenProps> = ({ jobI
   const router = useRouter();
   const { token } = useAuth();
   const voice = useVoiceCapture();
+  const saveSession = useRef(createMeasurementSaveSession());
 
   const [tab, setTab] = useState<Tab>('manual');
   const [code, setCode] = useState('');
@@ -42,6 +44,7 @@ export const NewMeasurementScreen: React.FC<NewMeasurementScreenProps> = ({ jobI
   const [glassType, setGlassType] = useState('');
   const [notes, setNotes] = useState('');
   const [photos, setPhotos] = useState<PickedPhoto[]>([]);
+  const [savedElementId, setSavedElementId] = useState<string | null>(null);
 
   const [isParsing, setIsParsing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -93,7 +96,7 @@ export const NewMeasurementScreen: React.FC<NewMeasurementScreenProps> = ({ jobI
   };
 
   const handleSave = async () => {
-    if (!token) return;
+    if (!token || isParsing || saveSession.current.isSaving) return;
     setError(null);
 
     const widthNum = parseFloat(width.replace(',', '.'));
@@ -114,34 +117,30 @@ export const NewMeasurementScreen: React.FC<NewMeasurementScreenProps> = ({ jobI
 
     setIsSaving(true);
     try {
-      const { element } = await createElementWithMeasurement(token, {
-        jobId,
-        code: code.trim(),
-        type,
-        location: location.trim() || undefined,
-        width: widthNum,
-        height: heightNum,
-        glassType: glassType.trim() || undefined,
-        measurementNotes: notes.trim() || undefined,
-      });
-
-      let failedPhotoCount = 0;
-      for (const photo of photos) {
-        try {
-          await uploadPhoto(token, photo, { elementId: element.id });
-        } catch {
-          failedPhotoCount += 1;
+      const result = await saveSession.current.save(
+        {
+          jobId,
+          code: code.trim(),
+          type,
+          location: location.trim() || undefined,
+          width: widthNum,
+          height: heightNum,
+          glassType: glassType.trim() || undefined,
+          measurementNotes: notes.trim() || undefined,
+        },
+        photos,
+        {
+          create: (input) => createElementWithMeasurement(token, input),
+          upload: (photo, elementId) => uploadPhoto(token, photo, { elementId }),
         }
-      }
+      );
+      setSavedElementId(result.elementId);
+      setPhotos(result.failedPhotos);
 
-      if (failedPhotoCount > 0) {
-        // Element + measurement are already saved - stay on screen so the
-        // user actually sees which photos didn't make it, instead of
-        // navigating away over the error.
+      if (result.failedPhotos.length > 0) {
         setError(
-          `Element opgeslagen, maar ${failedPhotoCount} foto('s) konden niet worden geüpload.`
+          `De meting is opgeslagen. ${result.failedPhotos.length} foto('s) zijn nog niet geüpload. Probeer deze opnieuw.`
         );
-        setPhotos([]);
         return;
       }
 
@@ -153,11 +152,37 @@ export const NewMeasurementScreen: React.FC<NewMeasurementScreenProps> = ({ jobI
     }
   };
 
+  if (savedElementId !== null) {
+    return (
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <Text style={styles.title}>Meting opgeslagen</Text>
+        <Text style={styles.hint}>Je hoeft de meting niet opnieuw in te voeren.</Text>
+        {error && <Text style={styles.error}>{error}</Text>}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photoRow}>
+          {photos.map((photo, index) => (
+            <Image
+              key={`${photo.uri}-${index}`}
+              source={{ uri: photo.uri }}
+              style={styles.photoThumb}
+              fadeDuration={0}
+            />
+          ))}
+        </ScrollView>
+        <Button
+          label={isSaving ? "Foto's uploaden..." : "Foto's opnieuw uploaden"}
+          onPress={handleSave}
+          disabled={isSaving || photos.length === 0}
+          style={styles.saveButton}
+        />
+      </ScrollView>
+    );
+  }
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.title}>Nieuw element inmeten</Text>
 
-      <View style={styles.tabs}>
+      <View style={styles.tabs} pointerEvents={isSaving ? 'none' : 'auto'}>
         <TouchableOpacity
           style={[styles.tab, tab === 'manual' && styles.tabActive]}
           onPress={() => setTab('manual')}
@@ -177,7 +202,7 @@ export const NewMeasurementScreen: React.FC<NewMeasurementScreenProps> = ({ jobI
       {error && <Text style={styles.error}>{error}</Text>}
 
       {tab === 'voice' && (
-        <View style={styles.voicePanel}>
+        <View style={styles.voicePanel} pointerEvents={isSaving ? 'none' : 'auto'}>
           <Text style={styles.hint}>
             Spreek de meting in, bijv. "R01 woonkamer, raam, 1230 breed, 1480 hoog, HR++ 4-16-4,
             sponning 18 millimeter, speling 8 millimeter, links draaikiep, rechts vast."
@@ -212,10 +237,11 @@ export const NewMeasurementScreen: React.FC<NewMeasurementScreenProps> = ({ jobI
       )}
 
       {tab === 'manual' && (
-        <View style={styles.form}>
+        <View style={styles.form} pointerEvents={isSaving ? 'none' : 'auto'}>
           <Text style={styles.label}>Elementcode</Text>
           <View style={styles.codeRow}>
             <TextInput
+              editable={!isSaving}
               style={[styles.input, styles.codeInput]}
               value={code}
               onChangeText={setCode}
@@ -247,6 +273,7 @@ export const NewMeasurementScreen: React.FC<NewMeasurementScreenProps> = ({ jobI
 
           <Text style={styles.label}>Locatie</Text>
           <TextInput
+            editable={!isSaving}
             style={styles.input}
             value={location}
             onChangeText={setLocation}
@@ -257,6 +284,7 @@ export const NewMeasurementScreen: React.FC<NewMeasurementScreenProps> = ({ jobI
             <View style={styles.dimensionField}>
               <Text style={styles.label}>Breedte (mm)</Text>
               <TextInput
+                editable={!isSaving}
                 style={styles.input}
                 value={width}
                 onChangeText={setWidth}
@@ -267,6 +295,7 @@ export const NewMeasurementScreen: React.FC<NewMeasurementScreenProps> = ({ jobI
             <View style={styles.dimensionField}>
               <Text style={styles.label}>Hoogte (mm)</Text>
               <TextInput
+                editable={!isSaving}
                 style={styles.input}
                 value={height}
                 onChangeText={setHeight}
@@ -278,6 +307,7 @@ export const NewMeasurementScreen: React.FC<NewMeasurementScreenProps> = ({ jobI
 
           <Text style={styles.label}>Glassoort</Text>
           <TextInput
+            editable={!isSaving}
             style={styles.input}
             value={glassType}
             onChangeText={setGlassType}
@@ -286,6 +316,7 @@ export const NewMeasurementScreen: React.FC<NewMeasurementScreenProps> = ({ jobI
 
           <Text style={styles.label}>Notities</Text>
           <TextInput
+            editable={!isSaving}
             style={[styles.input, styles.notesInput]}
             value={notes}
             onChangeText={setNotes}
@@ -322,7 +353,7 @@ export const NewMeasurementScreen: React.FC<NewMeasurementScreenProps> = ({ jobI
           <Button
             label={isSaving ? 'Opslaan...' : 'Opslaan'}
             onPress={handleSave}
-            disabled={isSaving}
+            disabled={isSaving || isParsing}
             style={styles.saveButton}
           />
         </View>

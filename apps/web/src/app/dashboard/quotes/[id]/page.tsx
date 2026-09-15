@@ -16,6 +16,7 @@ import {
 } from '../../../../lib/quotes';
 import { listElements } from '../../../../lib/elements';
 import { ApiError } from '../../../../lib/api';
+import { parseVatRate } from '../../../../lib/vat';
 import { QUOTE_STATUSES, QUOTE_STATUS_LABELS } from '../../../../constants/statusLabels';
 import { pageStyles, formStyles } from '../../../../styles/shared';
 import { LineItemsEditor, type LineItemInput } from '../../../../components/LineItemsEditor';
@@ -64,11 +65,16 @@ export default function QuoteDetailPage() {
     e.preventDefault();
     setSaveError(null);
     setSaved(false);
+    const parsedVatRate = parseVatRate(vatRate);
+    if (parsedVatRate === null) {
+      setSaveError('Vul een btw-percentage tussen 0 en 100 in.');
+      return;
+    }
     setIsSaving(true);
     try {
       const updated = await updateQuote(quoteId, {
         status,
-        vatRate: parseFloat(vatRate.replace(',', '.')) || undefined,
+        vatRate: parsedVatRate,
         validUntil: validUntil || undefined,
         notes: notes.trim() || undefined,
       });
@@ -173,6 +179,9 @@ export default function QuoteDetailPage() {
         <input
           id="vatRate"
           type="number"
+          required
+          min="0"
+          max="100"
           step="0.01"
           style={formStyles.input}
           value={vatRate}

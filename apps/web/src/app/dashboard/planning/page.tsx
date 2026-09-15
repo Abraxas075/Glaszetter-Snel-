@@ -7,25 +7,10 @@ import type { Job, Project, Team } from '@glaszetter/shared';
 import { listJobs } from '../../../lib/jobs';
 import { listTeams } from '../../../lib/teams';
 import { listProjects } from '../../../lib/projects';
+import { addDays, scheduledDateKey, startOfWeek, toDateKey } from '../../../lib/calendar';
 import { pageStyles } from '../../../styles/shared';
 
 const DAY_LABELS = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'];
-
-const startOfWeek = (date: Date): Date => {
-  const d = new Date(date);
-  const day = (d.getDay() + 6) % 7; // maandag = 0
-  d.setDate(d.getDate() - day);
-  d.setHours(0, 0, 0, 0);
-  return d;
-};
-
-const addDays = (date: Date, days: number): Date => {
-  const d = new Date(date);
-  d.setDate(d.getDate() + days);
-  return d;
-};
-
-const toDateKey = (date: Date): string => date.toISOString().slice(0, 10);
 
 const formatDayLabel = (date: Date): string =>
   `${DAY_LABELS[(date.getDay() + 6) % 7]} ${date.getDate()}/${date.getMonth() + 1}`;
@@ -65,7 +50,7 @@ export default function PlanningPage() {
       (job) =>
         job.teamId === teamId &&
         job.scheduledDate &&
-        toDateKey(new Date(job.scheduledDate)) === toDateKey(day)
+        scheduledDateKey(job.scheduledDate) === toDateKey(day)
     );
 
   return (

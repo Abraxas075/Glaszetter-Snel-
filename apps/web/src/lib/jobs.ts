@@ -5,10 +5,10 @@ export interface JobInput {
   projectId: string;
   name: string;
   status?: JobStatus;
-  dueDate?: string;
-  teamId?: string;
-  scheduledDate?: string;
-  notes?: string;
+  dueDate?: string | null;
+  teamId?: string | null;
+  scheduledDate?: string | null;
+  notes?: string | null;
 }
 
 export interface JobFilters {

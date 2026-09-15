@@ -74,9 +74,9 @@ export default function JobDetailPage() {
       const updated = await updateJob(jobId, {
         name: name.trim(),
         status,
-        teamId: teamId || undefined,
-        scheduledDate: scheduledDate || undefined,
-        notes: notes.trim() || undefined,
+        teamId: teamId || null,
+        scheduledDate: scheduledDate || null,
+        notes: notes.trim() || null,
       });
       setJob(updated);
       setSaved(true);

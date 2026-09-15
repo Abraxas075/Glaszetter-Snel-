@@ -7,10 +7,10 @@ export interface JobInput {
   projectId: string;
   name: string;
   status?: JobStatus;
-  dueDate?: string;
-  teamId?: string;
-  scheduledDate?: string;
-  notes?: string;
+  dueDate?: string | null;
+  teamId?: string | null;
+  scheduledDate?: string | null;
+  notes?: string | null;
 }
 
 export interface JobFilters {
@@ -149,10 +149,10 @@ export const updateJob = async (
        project_id = COALESCE($3, project_id),
        name = COALESCE($4, name),
        status = COALESCE($5::job_status, status),
-       due_date = COALESCE($6, due_date),
-       team_id = COALESCE($7, team_id),
-       scheduled_date = COALESCE($8, scheduled_date),
-       notes = COALESCE($9, notes),
+       due_date = CASE WHEN $10::boolean THEN $6::timestamptz ELSE due_date END,
+       team_id = CASE WHEN $11::boolean THEN $7::uuid ELSE team_id END,
+       scheduled_date = CASE WHEN $12::boolean THEN $8::date ELSE scheduled_date END,
+       notes = CASE WHEN $13::boolean THEN $9::text ELSE notes END,
        updated_at = now()
      WHERE id = $1 AND company_id = $2
      RETURNING *`,
@@ -166,6 +166,10 @@ export const updateJob = async (
       input.teamId ?? null,
       input.scheduledDate ?? null,
       input.notes ?? null,
+      input.dueDate !== undefined,
+      input.teamId !== undefined,
+      input.scheduledDate !== undefined,
+      input.notes !== undefined,
     ]
   );
   return mapJobRow(result.rows[0]);

@@ -32,6 +32,17 @@ jobs:
           distribution: temurin
           java-version: '17'
       - run: npm ci --include=dev
+      - name: Check native module resolution
+        run: |
+          node <<'NODE'
+          const path = require('node:path');
+          for (const name of ['expo-constants', 'expo-linking', 'expo-status-bar']) {
+            const root = require(name + '/package.json').version;
+            const mobile = require(require.resolve(name + '/package.json', { paths: [path.resolve('apps/mobile')] })).version;
+            if (root !== mobile) throw new Error(name + ': native autolinking and mobile resolve different versions');
+            console.log(name, root);
+          }
+          NODE
       - run: npm run build -w packages/shared
       - run: npm run type-check -w apps/mobile
       - run: npm run prebuild:android -w apps/mobile

@@ -1,0 +1,52 @@
+name: Android test APK
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'apps/mobile/**'
+      - 'packages/shared/**'
+      - 'package*.json'
+      - '.github/workflows/android-apk.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  apk:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    env:
+      CI: '1'
+      APK_PREVIEW: '1'
+      ANDROID_VERSION_CODE: ${{ github.run_number }}
+      EXPO_PUBLIC_API_URL: https://glaszetter-api.onrender.com/api/v1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - run: npm ci --include=dev
+      - run: npm run build -w packages/shared
+      - run: npm run type-check -w apps/mobile
+      - run: npm run prebuild:android -w apps/mobile
+      - name: Build standalone test APK
+        working-directory: apps/mobile/android
+        run: ./gradlew :app:assembleRelease --no-daemon --max-workers=2 -PreactNativeArchitectures=arm64-v8a,armeabi-v7a
+      - name: Verify APK signature and prepare download
+        run: |
+          APK=apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+          SIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -n 1)
+          "$SIGNER" verify --verbose "$APK"
+          cp "$APK" Glaszetter-Snel-Test.apk
+          sha256sum Glaszetter-Snel-Test.apk >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7
+        with:
+          path: Glaszetter-Snel-Test.apk
+          archive: false
+          retention-days: 30

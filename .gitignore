@@ -15,3 +15,8 @@ build/
 coverage/
 .turbo/
 *.tsbuildinfo
+
+# Generated native projects and APKs
+apps/mobile/android/
+apps/mobile/ios/
+*.apk

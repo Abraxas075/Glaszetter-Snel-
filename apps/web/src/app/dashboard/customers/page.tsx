@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import type { Route } from 'next';
+import Link from 'next/link';
 import type { Customer } from '@glaszetter/shared';
 import { createCustomer, listCustomers } from '../../../lib/customers';
 import { ApiError } from '../../../lib/api';
@@ -172,7 +174,14 @@ export default function CustomersPage() {
           <tbody>
             {customers.map((customer) => (
               <tr key={customer.id}>
-                <td style={pageStyles.td}>{customer.name}</td>
+                <td style={pageStyles.td}>
+                  <Link
+                    href={`/dashboard/customers/${customer.id}` as Route}
+                    style={pageStyles.tdLink}
+                  >
+                    {customer.name}
+                  </Link>
+                </td>
                 <td style={pageStyles.td}>{customer.email ?? '—'}</td>
                 <td style={pageStyles.td}>{customer.city ?? '—'}</td>
               </tr>

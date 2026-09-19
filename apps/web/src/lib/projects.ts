@@ -4,9 +4,9 @@ import { apiRequest } from './api';
 export interface ProjectInput {
   customerId: string;
   name: string;
-  address?: string;
-  city?: string;
-  description?: string;
+  address?: string | null;
+  city?: string | null;
+  description?: string | null;
   status?: ProjectStatus;
 }
 
@@ -21,3 +21,6 @@ export const createProject = (input: ProjectInput): Promise<Project> =>
 
 export const updateProject = (id: string, input: Partial<ProjectInput>): Promise<Project> =>
   apiRequest<Project>(`/projects/${id}`, { method: 'PATCH', body: JSON.stringify(input) });
+
+export const deleteProject = (id: string): Promise<void> =>
+  apiRequest<void>(`/projects/${id}`, { method: 'DELETE' });

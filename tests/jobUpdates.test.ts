@@ -40,6 +40,11 @@ before(async () => {
       created_at timestamptz NOT NULL DEFAULT now(),
       updated_at timestamptz NOT NULL DEFAULT now()
     );
+    CREATE TABLE elements (job_id uuid NOT NULL);
+    CREATE TABLE measurements (job_id uuid NOT NULL);
+    CREATE TABLE photos (job_id uuid NOT NULL);
+    CREATE TABLE quotes (job_id uuid NOT NULL);
+    CREATE TABLE invoices (job_id uuid NOT NULL);
   `);
   await db.query('INSERT INTO projects VALUES ($1, $2)', [projectId, companyId]);
   await db.query('INSERT INTO teams VALUES ($1, $2), ($3, $4), ($5, $2)', [
@@ -55,6 +60,11 @@ before(async () => {
 });
 
 beforeEach(async () => {
+  await db.query('DELETE FROM elements');
+  await db.query('DELETE FROM measurements');
+  await db.query('DELETE FROM photos');
+  await db.query('DELETE FROM quotes');
+  await db.query('DELETE FROM invoices');
   await db.query('DELETE FROM jobs');
   await db.query(
     `
@@ -137,4 +147,21 @@ test('another company cannot clear the job or assign its team', async () => {
   const saved = await service.getJob(companyId, jobId);
   assert.equal(saved.teamId, teamId);
   assert.equal(saved.notes, 'Bewaren');
+});
+
+test('work data protects a job from deletion, while an empty job can be deleted', async () => {
+  await db.query('INSERT INTO photos VALUES ($1)', [jobId]);
+  await assert.rejects(
+    service.deleteJob(companyId, jobId),
+    (error: unknown) =>
+      error instanceof Error &&
+      'code' in error &&
+      error.code === 'JOB_HAS_WORK_DATA'
+  );
+  assert.equal((await service.getJob(companyId, jobId)).name, 'Testklus');
+
+  await db.query('DELETE FROM photos');
+  await assert.rejects(service.deleteJob(otherCompanyId, jobId), /not found/i);
+  await service.deleteJob(companyId, jobId);
+  await assert.rejects(service.getJob(companyId, jobId), /not found/i);
 });

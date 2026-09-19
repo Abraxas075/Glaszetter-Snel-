@@ -1,18 +1,19 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import Link from 'next/link';
 import type { Job, Project, ProjectStatus } from '@glaszetter/shared';
-import { getProject, updateProject } from '../../../../lib/projects';
-import { listJobs } from '../../../../lib/jobs';
+import { deleteProject, getProject, updateProject } from '../../../../lib/projects';
+import { createJob, listJobs } from '../../../../lib/jobs';
 import { ApiError } from '../../../../lib/api';
 import { JOB_STATUS_LABELS, PROJECT_STATUSES, PROJECT_STATUS_LABELS } from '../../../../constants/statusLabels';
 import { pageStyles, formStyles } from '../../../../styles/shared';
 
 export default function ProjectDetailPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const projectId = params.id;
 
   const [project, setProject] = useState<Project | null>(null);
@@ -27,6 +28,12 @@ export default function ProjectDetailPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [showJobForm, setShowJobForm] = useState(false);
+  const [newJobName, setNewJobName] = useState('');
+  const [isCreatingJob, setIsCreatingJob] = useState(false);
+  const [jobError, setJobError] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     getProject(projectId)
@@ -42,21 +49,25 @@ export default function ProjectDetailPage() {
 
     listJobs(100, { projectId })
       .then((result) => setJobs(result.data))
-      .catch(() => {});
+      .catch(() => setJobs([]));
   }, [projectId]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaveError(null);
     setSaved(false);
+    if (!name.trim()) {
+      setSaveError('Naam is verplicht.');
+      return;
+    }
     setIsSaving(true);
     try {
       const updated = await updateProject(projectId, {
         name: name.trim(),
         status,
-        city: city.trim() || undefined,
-        address: address.trim() || undefined,
-        description: description.trim() || undefined,
+        city: city.trim() || null,
+        address: address.trim() || null,
+        description: description.trim() || null,
       });
       setProject(updated);
       setSaved(true);
@@ -64,6 +75,42 @@ export default function ProjectDetailPage() {
       setSaveError(err instanceof ApiError ? err.message : 'Opslaan is mislukt.');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleCreateJob = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setJobError(null);
+    if (!newJobName.trim()) {
+      setJobError('Naam is verplicht.');
+      return;
+    }
+
+    setIsCreatingJob(true);
+    try {
+      const created = await createJob({ name: newJobName.trim(), projectId });
+      setNewJobName('');
+      setShowJobForm(false);
+      setJobs((current) => (current ? [created, ...current] : [created]));
+    } catch (err) {
+      setJobError(err instanceof ApiError ? err.message : 'Klus aanmaken is mislukt.');
+    } finally {
+      setIsCreatingJob(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!project || jobs === null || jobs.length > 0) return;
+    if (!window.confirm(`Project "${project.name}" definitief verwijderen?`)) return;
+
+    setDeleteError(null);
+    setIsDeleting(true);
+    try {
+      await deleteProject(projectId);
+      router.push('/dashboard/projects');
+    } catch (err) {
+      setDeleteError(err instanceof ApiError ? err.message : 'Verwijderen is mislukt.');
+      setIsDeleting(false);
     }
   };
 
@@ -127,12 +174,36 @@ export default function ProjectDetailPage() {
         {saveError && <p style={pageStyles.error}>{saveError}</p>}
         {saved && <p style={{ color: 'var(--color-success)', marginTop: 'var(--spacing-md)' }}>Opgeslagen.</p>}
 
-        <button type="submit" style={formStyles.submitButton} disabled={isSaving}>
+        <button type="submit" style={formStyles.submitButton} disabled={isSaving || isDeleting}>
           {isSaving ? 'Opslaan...' : 'Opslaan'}
         </button>
       </form>
 
-      <h2 style={{ ...pageStyles.title, fontSize: 18, marginTop: 'var(--spacing-xxl)' }}>Klussen</h2>
+      <div style={{ ...pageStyles.headerRow, marginTop: 'var(--spacing-xxl)' }}>
+        <h2 style={{ ...pageStyles.title, fontSize: 18 }}>Klussen</h2>
+        <button style={pageStyles.primaryButton} onClick={() => setShowJobForm((value) => !value)}>
+          {showJobForm ? 'Annuleren' : '+ Nieuwe klus'}
+        </button>
+      </div>
+
+      {showJobForm && (
+        <form onSubmit={handleCreateJob} style={formStyles.card}>
+          <label style={formStyles.label} htmlFor="new-job-name">
+            Naam
+          </label>
+          <input
+            id="new-job-name"
+            style={formStyles.input}
+            value={newJobName}
+            onChange={(e) => setNewJobName(e.target.value)}
+            placeholder="Ramen plaatsen"
+          />
+          {jobError && <p style={pageStyles.error}>{jobError}</p>}
+          <button type="submit" style={formStyles.submitButton} disabled={isCreatingJob}>
+            {isCreatingJob ? 'Opslaan...' : 'Klus opslaan'}
+          </button>
+        </form>
+      )}
 
       {jobs === null && <p style={pageStyles.empty}>Laden...</p>}
       {jobs !== null && jobs.length === 0 && <p style={pageStyles.empty}>Nog geen klussen voor dit project.</p>}
@@ -159,6 +230,48 @@ export default function ProjectDetailPage() {
           </tbody>
         </table>
       )}
+
+      <div style={dangerZoneStyle}>
+        <h2 style={dangerTitleStyle}>Project verwijderen</h2>
+        <p style={pageStyles.empty}>
+          {(jobs?.length ?? 0) > 0
+            ? 'Dit project kan pas worden verwijderd nadat de klussen zijn verwijderd.'
+            : 'Dit verwijdert het project definitief.'}
+        </p>
+        {deleteError && <p style={pageStyles.error}>{deleteError}</p>}
+        <button
+          type="button"
+          style={dangerButtonStyle}
+          disabled={jobs === null || jobs.length > 0 || isDeleting}
+          onClick={handleDelete}
+        >
+          {isDeleting ? 'Verwijderen...' : 'Project verwijderen'}
+        </button>
+      </div>
     </div>
   );
 }
+
+const dangerZoneStyle: React.CSSProperties = {
+  border: '1px solid var(--color-error)',
+  borderRadius: 'var(--radius-md)',
+  padding: 'var(--spacing-lg)',
+  maxWidth: 480,
+  marginTop: 'var(--spacing-xxl)',
+};
+
+const dangerTitleStyle: React.CSSProperties = {
+  fontSize: 18,
+  color: 'var(--color-error)',
+  marginBottom: 'var(--spacing-sm)',
+};
+
+const dangerButtonStyle: React.CSSProperties = {
+  marginTop: 'var(--spacing-md)',
+  padding: 'var(--spacing-sm) var(--spacing-lg)',
+  borderRadius: 'var(--radius-md)',
+  backgroundColor: 'var(--color-error)',
+  color: 'var(--color-background)',
+  fontSize: 14,
+  fontWeight: 600,
+};

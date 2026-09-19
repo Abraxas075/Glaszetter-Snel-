@@ -37,3 +37,6 @@ export const createJob = (input: JobInput): Promise<Job> =>
 
 export const updateJob = (id: string, input: Partial<JobInput>): Promise<Job> =>
   apiRequest<Job>(`/jobs/${id}`, { method: 'PATCH', body: JSON.stringify(input) });
+
+export const deleteJob = (id: string): Promise<void> =>
+  apiRequest<void>(`/jobs/${id}`, { method: 'DELETE' });

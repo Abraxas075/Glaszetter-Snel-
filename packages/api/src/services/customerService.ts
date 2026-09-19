@@ -1,17 +1,17 @@
 import type { Customer, PaginatedResponse, PaginationParams } from '@glaszetter/shared';
 import { pool } from '../db/pool';
 import { mapCustomerRow, type CustomerRow } from '../db/rows';
-import { NotFoundError } from '../errors';
+import { ConflictError, NotFoundError } from '../errors';
 
 export interface CustomerInput {
   name: string;
-  email?: string;
-  phone?: string;
-  address?: string;
-  city?: string;
-  postalCode?: string;
-  country?: string;
-  taxId?: string;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  city?: string | null;
+  postalCode?: string | null;
+  country?: string | null;
+  taxId?: string | null;
 }
 
 export const listCustomers = async (
@@ -87,13 +87,13 @@ export const updateCustomer = async (
   const result = await pool.query<CustomerRow>(
     `UPDATE customers SET
        name = COALESCE($3, name),
-       email = COALESCE($4, email),
-       phone = COALESCE($5, phone),
-       address = COALESCE($6, address),
-       city = COALESCE($7, city),
-       postal_code = COALESCE($8, postal_code),
-       country = COALESCE($9, country),
-       tax_id = COALESCE($10, tax_id),
+       email = CASE WHEN $11::boolean THEN $4::text ELSE email END,
+       phone = CASE WHEN $12::boolean THEN $5::text ELSE phone END,
+       address = CASE WHEN $13::boolean THEN $6::text ELSE address END,
+       city = CASE WHEN $14::boolean THEN $7::text ELSE city END,
+       postal_code = CASE WHEN $15::boolean THEN $8::text ELSE postal_code END,
+       country = CASE WHEN $16::boolean THEN $9::text ELSE country END,
+       tax_id = CASE WHEN $17::boolean THEN $10::text ELSE tax_id END,
        updated_at = now()
      WHERE id = $1 AND company_id = $2
      RETURNING *`,
@@ -108,15 +108,34 @@ export const updateCustomer = async (
       input.postalCode ?? null,
       input.country ?? null,
       input.taxId ?? null,
+      input.email !== undefined,
+      input.phone !== undefined,
+      input.address !== undefined,
+      input.city !== undefined,
+      input.postalCode !== undefined,
+      input.country !== undefined,
+      input.taxId !== undefined,
     ]
   );
   return mapCustomerRow(result.rows[0]);
 };
 
 export const deleteCustomer = async (companyId: string, id: string): Promise<void> => {
-  const result = await pool.query('DELETE FROM customers WHERE id = $1 AND company_id = $2', [
-    id,
-    companyId,
-  ]);
-  if (result.rowCount === 0) throw new NotFoundError('Customer');
+  const result = await pool.query(
+    `DELETE FROM customers AS customer
+     WHERE customer.id = $1
+       AND customer.company_id = $2
+       AND NOT EXISTS (
+         SELECT 1 FROM projects WHERE projects.customer_id = customer.id
+       )
+     RETURNING customer.id`,
+    [id, companyId]
+  );
+  if (result.rowCount !== 0) return;
+
+  await getCustomer(companyId, id);
+  throw new ConflictError(
+    'Verwijder eerst de projecten van deze klant.',
+    'CUSTOMER_HAS_PROJECTS'
+  );
 };

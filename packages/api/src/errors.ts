@@ -4,3 +4,14 @@ export class NotFoundError extends Error {
     this.name = 'NotFoundError';
   }
 }
+
+export class ConflictError extends Error {
+  readonly status = 409;
+  readonly code: string;
+
+  constructor(message: string, code = 'CONFLICT') {
+    super(message);
+    this.name = 'ConflictError';
+    this.code = code;
+  }
+}

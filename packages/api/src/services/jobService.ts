@@ -1,7 +1,7 @@
 import type { Job, JobStatus, PaginatedResponse, PaginationParams } from '@glaszetter/shared';
 import { pool } from '../db/pool';
 import { mapJobRow, type JobRow } from '../db/rows';
-import { NotFoundError } from '../errors';
+import { ConflictError, NotFoundError } from '../errors';
 
 export interface JobInput {
   projectId: string;
@@ -176,9 +176,23 @@ export const updateJob = async (
 };
 
 export const deleteJob = async (companyId: string, id: string): Promise<void> => {
-  const result = await pool.query('DELETE FROM jobs WHERE id = $1 AND company_id = $2', [
-    id,
-    companyId,
-  ]);
-  if (result.rowCount === 0) throw new NotFoundError('Job');
+  const result = await pool.query(
+    `DELETE FROM jobs AS job
+     WHERE job.id = $1
+       AND job.company_id = $2
+       AND NOT EXISTS (SELECT 1 FROM elements WHERE elements.job_id = job.id)
+       AND NOT EXISTS (SELECT 1 FROM measurements WHERE measurements.job_id = job.id)
+       AND NOT EXISTS (SELECT 1 FROM photos WHERE photos.job_id = job.id)
+       AND NOT EXISTS (SELECT 1 FROM quotes WHERE quotes.job_id = job.id)
+       AND NOT EXISTS (SELECT 1 FROM invoices WHERE invoices.job_id = job.id)
+     RETURNING job.id`,
+    [id, companyId]
+  );
+  if (result.rowCount !== 0) return;
+
+  await getJob(companyId, id);
+  throw new ConflictError(
+    'Deze klus bevat al metingen, foto\'s, offertes of facturen en kan daarom niet worden verwijderd.',
+    'JOB_HAS_WORK_DATA'
+  );
 };

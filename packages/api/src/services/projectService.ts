@@ -6,14 +6,14 @@ import type {
 } from '@glaszetter/shared';
 import { pool } from '../db/pool';
 import { mapProjectRow, type ProjectRow } from '../db/rows';
-import { NotFoundError } from '../errors';
+import { ConflictError, NotFoundError } from '../errors';
 
 export interface ProjectInput {
   customerId: string;
   name: string;
-  address?: string;
-  city?: string;
-  description?: string;
+  address?: string | null;
+  city?: string | null;
+  description?: string | null;
   status?: ProjectStatus;
 }
 
@@ -102,9 +102,9 @@ export const updateProject = async (
     `UPDATE projects SET
        customer_id = COALESCE($3, customer_id),
        name = COALESCE($4, name),
-       address = COALESCE($5, address),
-       city = COALESCE($6, city),
-       description = COALESCE($7, description),
+       address = CASE WHEN $9::boolean THEN $5::text ELSE address END,
+       city = CASE WHEN $10::boolean THEN $6::text ELSE city END,
+       description = CASE WHEN $11::boolean THEN $7::text ELSE description END,
        status = COALESCE($8, status),
        updated_at = now()
      WHERE id = $1 AND company_id = $2
@@ -118,15 +118,28 @@ export const updateProject = async (
       input.city ?? null,
       input.description ?? null,
       input.status ?? null,
+      input.address !== undefined,
+      input.city !== undefined,
+      input.description !== undefined,
     ]
   );
   return mapProjectRow(result.rows[0]);
 };
 
 export const deleteProject = async (companyId: string, id: string): Promise<void> => {
-  const result = await pool.query('DELETE FROM projects WHERE id = $1 AND company_id = $2', [
-    id,
-    companyId,
-  ]);
-  if (result.rowCount === 0) throw new NotFoundError('Project');
+  const result = await pool.query(
+    `DELETE FROM projects AS project
+     WHERE project.id = $1
+       AND project.company_id = $2
+       AND NOT EXISTS (SELECT 1 FROM jobs WHERE jobs.project_id = project.id)
+     RETURNING project.id`,
+    [id, companyId]
+  );
+  if (result.rowCount !== 0) return;
+
+  await getProject(companyId, id);
+  throw new ConflictError(
+    'Verwijder eerst de klussen van dit project.',
+    'PROJECT_HAS_JOBS'
+  );
 };

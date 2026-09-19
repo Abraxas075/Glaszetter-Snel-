@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import Link from 'next/link';
-import type { Element, Job, JobStatus, Photo, Team } from '@glaszetter/shared';
-import { getJob, updateJob } from '../../../../lib/jobs';
+import type { Element, Job, JobStatus, Photo, Project, Team } from '@glaszetter/shared';
+import { deleteJob, getJob, updateJob } from '../../../../lib/jobs';
+import { getProject } from '../../../../lib/projects';
 import { listElements } from '../../../../lib/elements';
 import { listPhotos } from '../../../../lib/photos';
 import { listTeams } from '../../../../lib/teams';
@@ -16,9 +17,11 @@ import { pageStyles, formStyles } from '../../../../styles/shared';
 
 export default function JobDetailPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const jobId = params.id;
 
   const [job, setJob] = useState<Job | null>(null);
+  const [project, setProject] = useState<Project | null>(null);
   const [elements, setElements] = useState<Element[] | null>(null);
   const [jobPhotos, setJobPhotos] = useState<Photo[]>([]);
   const [elementPhotoCounts, setElementPhotoCounts] = useState<Record<string, number>>({});
@@ -33,6 +36,8 @@ export default function JobDetailPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     getJob(jobId)
@@ -43,6 +48,7 @@ export default function JobDetailPage() {
         setTeamId(j.teamId ?? '');
         setScheduledDate(j.scheduledDate ? String(j.scheduledDate).slice(0, 10) : '');
         setNotes(j.notes ?? '');
+        getProject(j.projectId).then(setProject).catch(() => {});
       })
       .catch(() => setError('Kon klus niet laden.'));
 
@@ -69,6 +75,10 @@ export default function JobDetailPage() {
     e.preventDefault();
     setSaveError(null);
     setSaved(false);
+    if (!name.trim()) {
+      setSaveError('Naam is verplicht.');
+      return;
+    }
     setIsSaving(true);
     try {
       const updated = await updateJob(jobId, {
@@ -87,6 +97,21 @@ export default function JobDetailPage() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!job) return;
+    if (!window.confirm(`Klus "${job.name}" definitief verwijderen?`)) return;
+
+    setDeleteError(null);
+    setIsDeleting(true);
+    try {
+      await deleteJob(jobId);
+      router.push(`/dashboard/projects/${job.projectId}`);
+    } catch (err) {
+      setDeleteError(err instanceof ApiError ? err.message : 'Verwijderen is mislukt.');
+      setIsDeleting(false);
+    }
+  };
+
   if (error) return <p style={pageStyles.error}>{error}</p>;
   if (!job) return <p style={pageStyles.empty}>Laden...</p>;
 
@@ -96,6 +121,14 @@ export default function JobDetailPage() {
         ← Terug naar klussen
       </Link>
       <h1 style={pageStyles.title}>{job.name}</h1>
+      {project && (
+        <p style={{ ...pageStyles.empty, marginTop: 'var(--spacing-xs)' }}>
+          Project:{' '}
+          <Link href={`/dashboard/projects/${project.id}` as Route} style={pageStyles.tdLink}>
+            {project.name}
+          </Link>
+        </p>
+      )}
 
       <form onSubmit={handleSave} style={{ ...formStyles.card, marginTop: 'var(--spacing-lg)' }}>
         <label style={formStyles.label} htmlFor="name">
@@ -155,7 +188,7 @@ export default function JobDetailPage() {
         {saveError && <p style={pageStyles.error}>{saveError}</p>}
         {saved && <p style={{ color: 'var(--color-success)', marginTop: 'var(--spacing-md)' }}>Opgeslagen.</p>}
 
-        <button type="submit" style={formStyles.submitButton} disabled={isSaving}>
+        <button type="submit" style={formStyles.submitButton} disabled={isSaving || isDeleting}>
           {isSaving ? 'Opslaan...' : 'Opslaan'}
         </button>
       </form>
@@ -211,6 +244,17 @@ export default function JobDetailPage() {
           </tbody>
         </table>
       )}
+
+      <div style={dangerZoneStyle}>
+        <h2 style={dangerTitleStyle}>Klus verwijderen</h2>
+        <p style={pageStyles.empty}>
+          Een klus met metingen, foto&apos;s, offertes of facturen blijft beschermd en kan niet worden verwijderd.
+        </p>
+        {deleteError && <p style={pageStyles.error}>{deleteError}</p>}
+        <button type="button" style={dangerButtonStyle} disabled={isDeleting} onClick={handleDelete}>
+          {isDeleting ? 'Verwijderen...' : 'Klus verwijderen'}
+        </button>
+      </div>
     </div>
   );
 }
@@ -228,4 +272,28 @@ const photoThumbStyle: React.CSSProperties = {
   objectFit: 'cover',
   borderRadius: 'var(--radius-md)',
   border: '1px solid var(--color-border)',
+};
+
+const dangerZoneStyle: React.CSSProperties = {
+  border: '1px solid var(--color-error)',
+  borderRadius: 'var(--radius-md)',
+  padding: 'var(--spacing-lg)',
+  maxWidth: 480,
+  marginTop: 'var(--spacing-xxl)',
+};
+
+const dangerTitleStyle: React.CSSProperties = {
+  fontSize: 18,
+  color: 'var(--color-error)',
+  marginBottom: 'var(--spacing-sm)',
+};
+
+const dangerButtonStyle: React.CSSProperties = {
+  marginTop: 'var(--spacing-md)',
+  padding: 'var(--spacing-sm) var(--spacing-lg)',
+  borderRadius: 'var(--radius-md)',
+  backgroundColor: 'var(--color-error)',
+  color: 'var(--color-background)',
+  fontSize: 14,
+  fontWeight: 600,
 };

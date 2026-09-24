@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Glaszetter Snel</title><link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <header><div class="mark">GS</div><div><b>Glaszetter Snel</b><small>Meten & projecten</small></div></header>
+  <main>
+    <section id="home" class="page active">
+      <h1>Goed gemeten.<br><span>Snel opgeslagen.</span></h1>
+      <div class="stats"><article><b id="projectCount">0</b><small>projecten</small></article><article><b id="paneCount">0</b><small>ruiten</small></article><article><b id="areaTotal">0,00</b><small>m² totaal</small></article></div>
+      <button class="primary" onclick="openNewProject()">＋ Nieuw project</button>
+      <button class="secondary" onclick="showPage('measure')">Glas meten</button>
+      <h2>Recente projecten</h2><div id="recent" class="empty">Nog geen projecten opgeslagen.</div>
+    </section>
+
+    <section id="projects" class="page"><div class="title"><h1>Projecten</h1><button onclick="openNewProject()">＋ Nieuw</button></div><div id="projectList"></div></section>
+
+    <section id="project" class="page">
+      <button class="back" onclick="showPage('projects')">‹ Terug</button><h1 id="projectTitle">Nieuw project</h1>
+      <form id="projectForm">
+        <label>Klantnaam<input id="customer" required placeholder="Bijv. Familie De Vries"></label>
+        <label>Adres of project<input id="address" placeholder="Straat, plaats of werknummer"></label>
+        <label>Notitie<textarea id="notes" placeholder="Toegang, verdieping, bijzonderheden…"></textarea></label>
+        <input id="editingId" type="hidden"><button class="primary" type="submit">Project opslaan</button>
+      </form>
+      <div id="paneArea" hidden><div class="title"><h2>Ruiten</h2><button onclick="openPaneForm()">＋ Ruit</button></div><div id="paneList"></div></div>
+    </section>
+
+    <section id="pane" class="page"><button class="back" onclick="backToProject()">‹ Project</button><h1>Ruit inmeten</h1>
+      <form id="paneForm">
+        <div class="row"><label>Breedte sponning (mm)<input id="width" type="number" min="1" inputmode="numeric" required></label><label>Hoogte sponning (mm)<input id="height" type="number" min="1" inputmode="numeric" required></label></div>
+        <label>Aftrek rondom<select id="deduction"><option value="8">8 mm totaal</option><option value="10" selected>10 mm totaal</option><option value="12">12 mm totaal</option></select></label>
+        <div class="result"><small>Bestelmaat</small><strong id="orderSize">— × — mm</strong><span id="area">0,00 m²</span></div>
+        <label>Glastype<select id="glassType"><option>HR++</option><option>HR+++</option><option>Enkelglas</option><option>Gelaagd veiligheidsglas</option><option>Gehard glas</option><option>Zonwerend HR++</option><option>Anders</option></select></label>
+        <label>Opbouw / dikte<input id="composition" placeholder="Bijv. 4-15-4 HR++"></label>
+        <label>Positie<input id="position" placeholder="Bijv. woonkamer links"></label>
+        <button class="primary" type="submit">Ruit toevoegen</button>
+      </form>
+    </section>
+
+    <section id="measure" class="page"><h1>Glas meten</h1><p class="intro">Visuele hulpmiddelen voor een controle op locatie. Gebruik bij twijfel altijd een professionele glasmeter.</p>
+      <article class="tool"><h2>Glasdikte-indicatie</h2><p>Houd de telefoon vlak tegen het glas. Verschuif de rode lijn tot deze gelijkvalt met de eerste reflectie en de blauwe lijn met de tweede.</p><div class="glass"><i id="redLine"></i><i id="blueLine"></i></div><label>Afstand reflecties<input id="thicknessSlider" type="range" min="2" max="30" value="4"></label><div class="measurement"><b id="thicknessValue">4 mm</b><small>indicatieve glasdikte</small></div></article>
+      <article class="tool"><h2>Coatingcontrole</h2><p>Schijn in een donkere omgeving schuin met een lampje op het glas. Eén afwijkend gekleurde reflectie wijst meestal op een metaalcoating.</p><div class="coating"><span></span><span></span><span class="coated"></span><span></span></div></article>
+      <div class="warning">Let op: deze hulpmiddelen geven een indicatie, geen gecertificeerde meting.</div>
+    </section>
+  </main>
+  <nav><button data-page="home" class="selected">⌂<span>Start</span></button><button data-page="projects">▤<span>Projecten</span></button><button data-page="measure">⌖<span>Meten</span></button></nav>
+  <script src="app.js"></script>
+</body></html>

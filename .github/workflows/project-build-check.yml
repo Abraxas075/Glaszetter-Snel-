@@ -1,0 +1,43 @@
+name: Project build check
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+  push:
+    branches:
+      - 'fix/**'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      EXPO_PUBLIC_API_URL: https://glaszetter-api.onrender.com/api/v1
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --include=dev
+
+      - name: Build shared package
+        run: npm run build --workspace @glaszetter/shared
+
+      - name: Build API
+        run: npm run build --workspace @glaszetter/api
+
+      - name: Build web
+        run: npm run build --workspace @glaszetter/web
+
+      - name: Type-check mobile
+        run: npm run type-check --workspace @glaszetter/mobile
+
+      - name: Export mobile Android bundle
+        run: npm run build --workspace @glaszetter/mobile
+
+      - name: Run tests
+        run: npm test

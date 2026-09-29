@@ -11,9 +11,9 @@
     "dev:web": "cd apps/web && npm run dev",
     "dev:mobile": "cd apps/mobile && npm start",
     "dev": "npm run dev:web",
-    "build": "npm run build --workspaces",
+    "build": "npm run build --workspace @glaszetter/shared && npm run build --workspace @glaszetter/api && npm run build --workspace @glaszetter/web && npm run build --workspace @glaszetter/mobile",
     "lint": "npm run lint --workspaces",
-    "type-check": "npm run type-check --workspaces",
+    "type-check": "npm run build --workspace @glaszetter/shared && npm run type-check --workspace @glaszetter/api && npm run type-check --workspace @glaszetter/web && npm run type-check --workspace @glaszetter/mobile",
     "test": "node --import tsx --test tests/*.test.ts"
   },
   "devDependencies": {

@@ -1,5 +1,6 @@
 'use client';
 
+import { MeetbonForm } from '../../../../components/MeetbonForm';
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import type { Route } from 'next';
@@ -192,6 +193,8 @@ export default function JobDetailPage() {
           {isSaving ? 'Opslaan...' : 'Opslaan'}
         </button>
       </form>
+
+      <MeetbonForm jobId={jobId} />
 
       <h2 style={{ ...pageStyles.title, fontSize: 18, marginTop: 'var(--spacing-xxl)' }}>
         Klusfoto's

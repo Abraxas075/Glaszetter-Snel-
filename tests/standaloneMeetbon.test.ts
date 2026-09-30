@@ -1,0 +1,23 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { test } from 'node:test';
+import { createContext, runInContext } from 'node:vm';
+test('standalone Android meetbon persists without losing project details or pane quantities', () => {
+  const nodes: Record<string, any> = {};
+  const node = (id: string) => nodes[id] ??= { value: '', textContent: '', innerHTML: '', hidden: false, addEventListener() {}, reset() {}, querySelectorAll() { return []; } };
+  let stored = '';
+  const context = createContext({ document: { getElementById: node, querySelectorAll: () => [] }, localStorage: { getItem: () => stored || null, setItem: (_: string, v: string) => { stored = v; } }, scrollTo() {}, confirm: () => true, alert() {} });
+  const root = 'apps/glass-measurement-android/app/src/main/assets/';
+  runInContext(readFileSync(root + 'meetbon-fields.js', 'utf8'), context);
+  runInContext(readFileSync(root + 'app.js', 'utf8'), context);
+  runInContext("projects=[{id:'123',customer:'Klant',address:'Straat',notes:'Bewaren',panes:[{quantity:2,orderWidth:875,orderHeight:484}],meetbon:{fields:{postalCode:'1234 AB'},checks:{g5c0:true}}}];openProject('123');", context);
+  node('customer').value = 'Nieuwe naam';
+  node('projectForm').onsubmit({ preventDefault() {} });
+  const saved = JSON.parse(stored)[0];
+  assert.equal(saved.customer, 'Nieuwe naam');
+  assert.equal(saved.meetbon.fields.postalCode, '1234 AB');
+  assert.equal(saved.meetbon.checks.g5c0, true);
+  assert.equal(saved.panes[0].quantity, 2);
+  assert.equal(node('paneCount').textContent, 2);
+  assert.ok(Math.abs(runInContext('projectArea(projects[0])', context) - 0.847) < 0.001);
+});

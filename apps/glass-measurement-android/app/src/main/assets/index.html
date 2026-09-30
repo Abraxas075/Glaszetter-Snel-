@@ -25,11 +25,13 @@
         <label>Notitie<textarea id="notes" placeholder="Toegang, verdieping, bijzonderheden…"></textarea></label>
         <input id="editingId" type="hidden"><button class="primary" type="submit">Project opslaan</button>
       </form>
+      <div id="meetbonArea" hidden><h2>Digitale meetbon</h2><form id="meetbonForm"><div id="meetbonFields"></div><button class="primary" type="submit">Meetbon opslaan</button><p id="meetbonStatus" role="status"></p></form></div>
       <div id="paneArea" hidden><div class="title"><h2>Ruiten</h2><button onclick="openPaneForm()">＋ Ruit</button></div><div id="paneList"></div></div>
     </section>
 
     <section id="pane" class="page"><button class="back" onclick="backToProject()">‹ Project</button><h1>Ruit inmeten</h1>
       <form id="paneForm">
+        <label>Aantal<input id="quantity" type="number" min="1" step="1" value="1" required></label>
         <div class="row"><label>Breedte sponning (mm)<input id="width" type="number" min="1" inputmode="numeric" required></label><label>Hoogte sponning (mm)<input id="height" type="number" min="1" inputmode="numeric" required></label></div>
         <label>Aftrek rondom<select id="deduction"><option value="8">8 mm totaal</option><option value="10" selected>10 mm totaal</option><option value="12">12 mm totaal</option></select></label>
         <div class="result"><small>Bestelmaat</small><strong id="orderSize">— × — mm</strong><span id="area">0,00 m²</span></div>
@@ -47,5 +49,6 @@
     </section>
   </main>
   <nav><button data-page="home" class="selected">⌂<span>Start</span></button><button data-page="projects">▤<span>Projecten</span></button><button data-page="measure">⌖<span>Meten</span></button></nav>
+  <script src="meetbon-fields.js"></script>
   <script src="app.js"></script>
 </body></html>

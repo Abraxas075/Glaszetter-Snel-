@@ -1,3 +1,5 @@
+import { isMeetbon } from '@glaszetter/shared';
+import { getMeetbon, saveMeetbon } from '../services/meetbonService';
 import { Router, type NextFunction, type Request, type Response } from 'express';
 import { requireAuth } from '../middleware/auth';
 import { NotFoundError } from '../errors';
@@ -43,6 +45,19 @@ jobsRouter.get('/', async (req: Request, res: Response, next: NextFunction) => {
   } catch (err) {
     next(err);
   }
+});
+
+jobsRouter.get('/:id/meetbon', async (req: Request, res: Response, next: NextFunction) => {
+  try { res.json({ success: true, data: await getMeetbon(req.auth!.companyId, req.params.id) }); }
+  catch (err) { handleNotFound(err, res, next); }
+});
+jobsRouter.put('/:id/meetbon', async (req: Request, res: Response, next: NextFunction) => {
+  if (!isMeetbon(req.body)) {
+    res.status(400).json({ success: false, error: { code: 'INVALID_INPUT', message: 'Controleer de meetbon: aantal en maten moeten positief zijn.' } });
+    return;
+  }
+  try { res.json({ success: true, data: await saveMeetbon(req.auth!.companyId, req.params.id, req.body) }); }
+  catch (err) { handleNotFound(err, res, next); }
 });
 
 jobsRouter.get('/:id', async (req: Request, res: Response, next: NextFunction) => {

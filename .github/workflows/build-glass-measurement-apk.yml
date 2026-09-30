@@ -2,6 +2,10 @@ name: Bouw Glasmeting Android APK
 
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - 'apps/glass-measurement-android/**'
+      - '.github/workflows/build-glass-measurement-apk.yml'
   push:
     branches: [main]
     paths:

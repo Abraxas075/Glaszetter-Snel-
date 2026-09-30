@@ -40,6 +40,7 @@ before(async () => {
       created_at timestamptz NOT NULL DEFAULT now(),
       updated_at timestamptz NOT NULL DEFAULT now()
     );
+    CREATE TABLE meetbons (job_id uuid PRIMARY KEY REFERENCES jobs(id) ON DELETE CASCADE, data jsonb NOT NULL, updated_at timestamptz DEFAULT now());
     CREATE TABLE elements (job_id uuid NOT NULL);
     CREATE TABLE measurements (job_id uuid NOT NULL);
     CREATE TABLE photos (job_id uuid NOT NULL);
@@ -60,6 +61,7 @@ before(async () => {
 });
 
 beforeEach(async () => {
+  await db.query('DELETE FROM meetbons');
   await db.query('DELETE FROM elements');
   await db.query('DELETE FROM measurements');
   await db.query('DELETE FROM photos');
@@ -164,4 +166,17 @@ test('work data protects a job from deletion, while an empty job can be deleted'
   await assert.rejects(service.deleteJob(otherCompanyId, jobId), /not found/i);
   await service.deleteJob(companyId, jobId);
   await assert.rejects(service.getJob(companyId, jobId), /not found/i);
+});
+
+ test('meetbon persists across reloads, protects deletion and is isolated by company', async () => {
+  const { saveMeetbon, getMeetbon } = await import('../packages/api/src/services/meetbonService');
+  const data = { fields: { name: 'Testklant' }, checks: { g1c0: true }, lines: [{ quantity: 2, width: 875, height: 484, glassType: 'HR++', notes: 'Woonkamer' }] };
+  assert.deepEqual(await getMeetbon(companyId, jobId), { fields: {}, checks: {}, lines: [] });
+  await saveMeetbon(companyId, jobId, data);
+  assert.deepEqual(await getMeetbon(companyId, jobId), data);
+  await assert.rejects(getMeetbon(otherCompanyId, jobId), /not found/i);
+  await assert.rejects(saveMeetbon(otherCompanyId, jobId, data), /not found/i);
+  await assert.rejects(service.deleteJob(companyId, jobId), /meetbon/i);
+  await service.updateJob(companyId, jobId, { notes: 'Nieuwe notitie' });
+  assert.deepEqual(await getMeetbon(companyId, jobId), data);
 });

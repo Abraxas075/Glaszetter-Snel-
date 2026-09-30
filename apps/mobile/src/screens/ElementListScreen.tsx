@@ -79,6 +79,8 @@ export const ElementListScreen: React.FC<ElementListScreenProps> = ({ jobId }) =
         />
       </View>
 
+      <Button label="Digitale meetbon" onPress={() => router.push(`/jobs/${jobId}/meetbon`)} />
+
       <View style={styles.photoSection}>
         <Text style={styles.sectionTitle}>Klusfoto's</Text>
         <View style={styles.photoActions}>

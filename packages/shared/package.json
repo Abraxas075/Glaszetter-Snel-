@@ -8,19 +8,22 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "require": "./dist-cjs/index.js"
     },
     "./types": {
       "types": "./dist/types/index.d.ts",
-      "import": "./dist/types/index.js"
+      "import": "./dist/types/index.js",
+      "require": "./dist-cjs/types/index.js"
     },
     "./utils": {
       "types": "./dist/utils/index.d.ts",
-      "import": "./dist/utils/index.js"
+      "import": "./dist/utils/index.js",
+      "require": "./dist-cjs/utils/index.js"
     }
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && tsc --module CommonJS --moduleResolution Node --outDir dist-cjs && node -e \"require('fs').writeFileSync('dist-cjs/package.json', JSON.stringify({type:'commonjs'}))\"",
     "type-check": "tsc --noEmit",
     "lint": "eslint src"
   },

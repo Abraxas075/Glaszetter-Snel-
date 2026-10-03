@@ -124,7 +124,7 @@ export async function generateMeetbonPdf(
           const bytes = await loadPhoto(photo.storageKey);
           if (bytes.length + embeddedBytes > 30 * 1024 * 1024) reason = 'Niet ingesloten: limiet voor foto’s in deze PDF bereikt.';
           else {
-            space(280);
+            space(324);
             doc.image(bytes, 44, doc.y + 12, { fit: [width, 300], align: 'center' });
             embeddedBytes += bytes.length;
           }

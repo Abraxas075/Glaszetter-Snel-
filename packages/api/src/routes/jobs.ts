@@ -1,5 +1,6 @@
 import { isMeetbon } from '@glaszetter/shared';
 import { getMeetbon, saveMeetbon } from '../services/meetbonService';
+import { generateMeetbonPdf, getMeetbonPdfInput } from '../services/meetbonPdfService';
 import { Router, type NextFunction, type Request, type Response } from 'express';
 import { requireAuth } from '../middleware/auth';
 import { NotFoundError } from '../errors';
@@ -45,6 +46,17 @@ jobsRouter.get('/', async (req: Request, res: Response, next: NextFunction) => {
   } catch (err) {
     next(err);
   }
+});
+
+jobsRouter.get('/:id/meetbon/pdf', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const input = await getMeetbonPdfInput(req.auth!.companyId, req.params.id);
+    const pdf = await generateMeetbonPdf(input);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename="Meetbon.pdf"');
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.send(pdf);
+  } catch (err) { handleNotFound(err, res, next); }
 });
 
 jobsRouter.get('/:id/meetbon', async (req: Request, res: Response, next: NextFunction) => {

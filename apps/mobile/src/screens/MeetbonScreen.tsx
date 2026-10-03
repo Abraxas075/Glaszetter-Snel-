@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ScrollView, Text, TextInput, View, Switch } from 'react-native';
 import { emptyMeetbon, isMeetbon, MEETBON_SECTIONS, type Meetbon } from '@glaszetter/shared';
 import { apiRequest } from '../api/client';
+import { shareMeetbonPdf } from '../api/meetbonPdf';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/Button';
 export function MeetbonScreen({ jobId }: { jobId: string }) {
@@ -9,6 +10,7 @@ export function MeetbonScreen({ jobId }: { jobId: string }) {
   const [data, setData] = useState<Meetbon>(emptyMeetbon);
   const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [message, setMessage] = useState('');
   useEffect(() => {
     let active = true; setLoaded(false);
@@ -22,6 +24,20 @@ export function MeetbonScreen({ jobId }: { jobId: string }) {
     try { await apiRequest(`/jobs/${jobId}/meetbon`, { token, method: 'PUT', body: JSON.stringify(data) }); setMessage('Meetbon opgeslagen.'); }
     catch { setMessage('Opslaan mislukt. Je invoer blijft staan.'); }
     finally { setBusy(false); }
+  }
+  async function exportPdf() {
+    if (!loaded || busy || !token) return;
+    if (!isMeetbon(data)) { setMessage('Vul per ruit een positief aantal, breedte en hoogte in.'); return; }
+    setBusy(true); setExporting(true); setMessage('');
+    let saved = false;
+    try {
+      await apiRequest(`/jobs/${jobId}/meetbon`, { token, method: 'PUT', body: JSON.stringify(data) });
+      saved = true;
+      await shareMeetbonPdf(jobId, token);
+      setMessage('Meetbon opgeslagen. PDF geopend om op te slaan of te delen.');
+    } catch (err) {
+      setMessage(saved ? `Meetbon opgeslagen. ${err instanceof Error ? err.message : 'PDF delen is mislukt. Probeer opnieuw.'}` : 'Opslaan mislukt. Je invoer blijft staan.');
+    } finally { setBusy(false); setExporting(false); }
   }
   return <ScrollView contentContainerStyle={{ padding: 20, gap: 12 }}>
     <Text style={{ fontSize: 24, fontWeight: 'bold' }}>Digitale meetbon</Text>
@@ -42,6 +58,8 @@ export function MeetbonScreen({ jobId }: { jobId: string }) {
       <Button label="＋ Ruit toevoegen" disabled={!loaded || busy || data.lines.length >= 200} onPress={() => setData({ ...data, lines: [...data.lines, { quantity: 1, width: 0, height: 0, glassType: '', notes: '' }] })} />
       <Text>Totaal: {data.lines.reduce((n, l) => n + l.quantity * l.width * l.height / 1e6, 0).toLocaleString('nl-NL', { maximumFractionDigits: 3 })} m²</Text>
     </View>
-    <Button label={busy ? 'Opslaan…' : 'Meetbon opslaan'} disabled={!loaded || busy} onPress={save} />
+    <Button label={busy && !exporting ? 'Opslaan…' : 'Meetbon opslaan'} disabled={!loaded || busy} onPress={save} />
+    <Button label={exporting ? 'PDF maken…' : 'Opslaan en PDF delen'} disabled={!loaded || busy} onPress={exportPdf} />
+    <Text>De PDF bevat de ingevulde meetbon en beschikbare klus- en elementfoto’s. Niet ingesloten foto’s worden vermeld.</Text>
   </ScrollView>;
 }

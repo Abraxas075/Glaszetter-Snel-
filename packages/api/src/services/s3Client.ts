@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 
 const getRequiredEnv = (name: string): string => {
   const value = process.env[name];
@@ -59,4 +59,24 @@ export const deleteFromBucket = async (key: string): Promise<void> => {
       Key: key,
     })
   );
+};
+
+// Read stored objects rather than fetching photo URLs supplied by a client.
+export const readFromBucket = async (key: string): Promise<Buffer> => {
+  const result = await getClient().send(
+    new GetObjectCommand({ Bucket: getRequiredEnv('S3_BUCKET'), Key: key }),
+    { abortSignal: AbortSignal.timeout(10000) }
+  );
+  const maxBytes = 15 * 1024 * 1024;
+  if (!result.Body || (result.ContentLength ?? 0) > maxBytes) {
+    throw new Error('Photo is missing or too large');
+  }
+  const chunks: Buffer[] = [];
+  let size = 0;
+  for await (const chunk of result.Body as AsyncIterable<Uint8Array>) {
+    size += chunk.length;
+    if (size > maxBytes) throw new Error('Photo is too large');
+    chunks.push(Buffer.from(chunk));
+  }
+  return Buffer.concat(chunks);
 };

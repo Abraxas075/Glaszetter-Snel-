@@ -1,12 +1,13 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { emptyMeetbon, isMeetbon, MEETBON_SECTIONS, type Meetbon } from '@glaszetter/shared';
-import { apiRequest } from '../lib/api';
+import { apiRequest, fetchBlob } from '../lib/api';
 import { formStyles, pageStyles } from '../styles/shared';
 export function MeetbonForm({ jobId }: { jobId: string }) {
   const [data, setData] = useState<Meetbon>(emptyMeetbon);
   const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [message, setMessage] = useState('');
   useEffect(() => {
     let active = true;
@@ -22,6 +23,25 @@ export function MeetbonForm({ jobId }: { jobId: string }) {
     try { await apiRequest(`/jobs/${jobId}/meetbon`, { method: 'PUT', body: JSON.stringify(data) }); setMessage('Meetbon opgeslagen.'); }
     catch { setMessage('Opslaan mislukt. Je invoer staat nog in het formulier.'); }
     finally { setBusy(false); }
+  };
+  const downloadPdf = async () => {
+    if (!loaded || busy) return;
+    if (!isMeetbon(data)) { setMessage('Vul een positief aantal, breedte en hoogte in voor elke ruit.'); return; }
+    setBusy(true); setExporting(true); setMessage('');
+    let saved = false;
+    try {
+      await apiRequest(`/jobs/${jobId}/meetbon`, { method: 'PUT', body: JSON.stringify(data) });
+      saved = true;
+      const blob = await fetchBlob(`/jobs/${jobId}/meetbon/pdf`);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url; link.download = 'Meetbon.pdf';
+      document.body.appendChild(link); link.click(); link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      setMessage('Meetbon opgeslagen. PDF-download gestart.');
+    } catch {
+      setMessage(saved ? 'Meetbon opgeslagen, maar PDF downloaden is mislukt. Probeer opnieuw.' : 'Opslaan mislukt. Je invoer staat nog in het formulier.');
+    } finally { setBusy(false); setExporting(false); }
   };
   return <section style={{ marginTop: 32 }}>
     <h2 style={pageStyles.title}>Digitale meetbon</h2>
@@ -47,7 +67,11 @@ export function MeetbonForm({ jobId }: { jobId: string }) {
         </fieldset>)}
         <button type="button" disabled={data.lines.length >= 200} onClick={() => setData({ ...data, lines: [...data.lines, { quantity: 1, width: 0, height: 0, glassType: '', notes: '' }] })}>＋ Ruit toevoegen</button>
         <p>Totaal: {data.lines.reduce((n, l) => n + l.quantity * l.width * l.height / 1e6, 0).toLocaleString('nl-NL', { maximumFractionDigits: 3 })} m²</p>
-        <button style={formStyles.submitButton} type="submit">{busy ? 'Opslaan…' : 'Meetbon opslaan'}</button>
+        <button style={formStyles.submitButton} type="submit">{busy && !exporting ? 'Opslaan…' : 'Meetbon opslaan'}</button>
+        <button style={{ ...formStyles.submitButton, marginLeft: 12 }} type="button" onClick={downloadPdf}>
+          {exporting ? 'PDF maken…' : 'Opslaan en PDF downloaden'}
+        </button>
+        <p>De PDF bevat de ingevulde meetbon en beschikbare klus- en elementfoto’s. Niet ingesloten foto’s worden vermeld.</p>
       </fieldset>
       <p role="status">{message || (!loaded ? 'Meetbon laden…' : '')}</p>
     </form>

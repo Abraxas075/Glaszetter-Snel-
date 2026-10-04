@@ -333,8 +333,20 @@ export const MEETBON_SECTIONS = [
   }
 ] as const;
 export interface MeetbonLine { quantity: number; width: number; height: number; glassType: string; notes: string; }
-export interface Meetbon { fields: Record<string, string>; checks: Record<string, boolean>; lines: MeetbonLine[]; }
+export interface Meetbon { revision?: string | null; fields: Record<string, string>; checks: Record<string, boolean>; lines: MeetbonLine[]; }
 export const emptyMeetbon = (): Meetbon => ({ fields: {}, checks: {}, lines: [] });
+// PostgreSQL jsonb cannot store NUL or unpaired UTF-16 surrogates.
+const isStoredText = (value: unknown): value is string => {
+  if (typeof value !== 'string' || value.length > 2000 || value.includes('\u0000')) return false;
+  for (let i = 0; i < value.length; i++) {
+    const code = value.charCodeAt(i);
+    if (code >= 0xd800 && code <= 0xdbff) {
+      const low = value.charCodeAt(++i);
+      if (!(low >= 0xdc00 && low <= 0xdfff)) return false;
+    } else if (code >= 0xdc00 && code <= 0xdfff) return false;
+  }
+  return true;
+};
 export function isMeetbon(value: unknown): value is Meetbon {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const v = value as Meetbon;
@@ -342,11 +354,11 @@ export function isMeetbon(value: unknown): value is Meetbon {
   if (!object(v.fields) || !object(v.checks) || !Array.isArray(v.lines) || v.lines.length > 200) return false;
   const fields = new Set<string>(MEETBON_SECTIONS.flatMap(s => s.fields.map(f => f.key)));
   const checks = new Set<string>(MEETBON_SECTIONS.flatMap(s => s.checks.map(f => f.key)));
-  return Object.entries(v.fields).every(([k,x]) => fields.has(k) && typeof x === 'string' && x.length <= 2000)
+  return Object.entries(v.fields).every(([k,x]) => fields.has(k) && isStoredText(x))
     && Object.entries(v.checks).every(([k,x]) => checks.has(k) && typeof x === 'boolean')
     && v.lines.every(l => object(l) && Number.isInteger(l.quantity) && l.quantity > 0 && l.quantity <= 10000
       && Number.isFinite(l.width) && l.width > 0 && l.width <= 100000
       && Number.isFinite(l.height) && l.height > 0 && l.height <= 100000
-      && typeof l.glassType === 'string' && l.glassType.length <= 2000
-      && typeof l.notes === 'string' && l.notes.length <= 2000);
+      && isStoredText(l.glassType)
+      && isStoredText(l.notes));
 }

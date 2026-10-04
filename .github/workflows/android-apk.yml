@@ -2,6 +2,11 @@ name: Android test APK
 
 on:
   workflow_dispatch:
+    inputs:
+      test_api_url:
+        description: 'Aparte HTTPS-test-API, inclusief /api/v1 (met migratie 12)'
+        required: true
+        type: string
   pull_request:
     paths:
       - 'apps/mobile/**'
@@ -20,7 +25,7 @@ jobs:
       CI: '1'
       APK_PREVIEW: '1'
       ANDROID_VERSION_CODE: ${{ github.run_number }}
-      EXPO_PUBLIC_API_URL: https://glaszetter-api.onrender.com/api/v1
+      EXPO_PUBLIC_API_URL: ${{ inputs.test_api_url || vars.APK_TEST_API_URL }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -31,6 +36,9 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+      - name: Validate test API configuration
+        run: |
+          node -e "require('./apps/mobile/app.config.js')({config: require('./apps/mobile/app.json').expo})"
       - run: npm ci --include=dev
       - name: Check native module resolution
         run: |
@@ -55,9 +63,18 @@ jobs:
           SIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -n 1)
           "$SIGNER" verify --verbose "$APK"
           cp "$APK" Glaszetter-Snel-Test.apk
-          sha256sum Glaszetter-Snel-Test.apk >> "$GITHUB_STEP_SUMMARY"
+          sha256sum Glaszetter-Snel-Test.apk > Glaszetter-Snel-Test.sha256
+          node -e "require('fs').writeFileSync('Glaszetter-Snel-Test-build.json', JSON.stringify({commit:process.env.GITHUB_SHA,api:process.env.EXPO_PUBLIC_API_URL,versionCode:process.env.ANDROID_VERSION_CODE,run:process.env.GITHUB_RUN_ID},null,2))"
+          cat Glaszetter-Snel-Test.sha256 >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v7
         with:
           path: Glaszetter-Snel-Test.apk
           archive: false
+          retention-days: 30
+      - uses: actions/upload-artifact@v7
+        with:
+          name: test-apk-buildgegevens
+          path: |
+            Glaszetter-Snel-Test.sha256
+            Glaszetter-Snel-Test-build.json
           retention-days: 30

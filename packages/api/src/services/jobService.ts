@@ -180,7 +180,17 @@ export const deleteJob = async (companyId: string, id: string): Promise<void> =>
     `DELETE FROM jobs AS job
      WHERE job.id = $1
        AND job.company_id = $2
-       AND NOT EXISTS (SELECT 1 FROM meetbons WHERE meetbons.job_id = job.id)
+       AND NOT EXISTS (
+         SELECT 1 FROM meetbons WHERE meetbons.job_id = job.id AND
+         CASE WHEN jsonb_typeof(data->'fields') = 'object'
+                AND jsonb_typeof(data->'checks') = 'object'
+                AND jsonb_typeof(data->'lines') = 'array'
+         THEN data->'lines' <> '[]'::jsonb
+           OR EXISTS (SELECT 1 FROM jsonb_each(data->'fields') f WHERE f.value <> '\"\"'::jsonb)
+           OR EXISTS (SELECT 1 FROM jsonb_each(data->'checks') c WHERE c.value <> 'false'::jsonb)
+           OR EXISTS (SELECT 1 FROM jsonb_each(data) extra WHERE extra.key NOT IN ('fields', 'checks', 'lines'))
+         ELSE true END
+       )
        AND NOT EXISTS (SELECT 1 FROM elements WHERE elements.job_id = job.id)
        AND NOT EXISTS (SELECT 1 FROM measurements WHERE measurements.job_id = job.id)
        AND NOT EXISTS (SELECT 1 FROM photos WHERE photos.job_id = job.id)

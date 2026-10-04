@@ -1,0 +1,53 @@
+# Separate Blueprint; never replace the production render.yaml.
+# Publish the prepared branch before creating this environment.
+databases:
+  - name: glaszetter-db-test
+    plan: free
+    region: frankfurt
+    databaseName: glaszetter_snel_test
+    user: glaszetter_test
+
+services:
+  - type: web
+    name: glaszetter-api-test
+    runtime: node
+    plan: free
+    region: frankfurt
+    branch: fix/meetbon-opslag-20261003
+    autoDeployTrigger: off
+    buildCommand: npm ci --include=dev && npm run build -w packages/shared -w packages/api && node scripts/prepare-test-api.cjs
+    startCommand: npm run start -w packages/api
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: '20'
+      - key: NODE_ENV
+        value: production
+      - key: APP_ENV
+        value: test
+      - key: DATABASE_URL
+        fromDatabase:
+          name: glaszetter-db-test
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: TEST_ADMIN_EMAIL
+        sync: false
+      - key: TEST_ADMIN_PASSWORD
+        generateValue: true
+      - key: CORS_ORIGIN
+        sync: false
+      - key: S3_BUCKET
+        value: glaszetter-snel-test
+      - key: S3_ENDPOINT
+        sync: false
+      - key: S3_REGION
+        sync: false
+      - key: S3_ACCESS_KEY_ID
+        sync: false
+      - key: S3_SECRET_ACCESS_KEY
+        sync: false
+      - key: S3_PUBLIC_URL_BASE
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false

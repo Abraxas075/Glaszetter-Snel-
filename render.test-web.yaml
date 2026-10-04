@@ -1,0 +1,19 @@
+# Create only after the separate test API URL is confirmed.
+services:
+  - type: web
+    name: glaszetter-web-test
+    runtime: node
+    plan: free
+    region: frankfurt
+    branch: fix/meetbon-opslag-20261003
+    autoDeployTrigger: off
+    buildCommand: node scripts/check-test-web-config.cjs && npm ci --include=dev && npm run build -w packages/shared -w apps/web
+    startCommand: npm run start -w apps/web -- --hostname 0.0.0.0 --port $PORT
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: '20'
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_API_URL
+        sync: false

@@ -22,3 +22,6 @@ apps/mobile/ios/
 *.apk
 
 dist-cjs/
+
+# Local test hosting secrets
+deploy/test.env

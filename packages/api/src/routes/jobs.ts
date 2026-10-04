@@ -1,5 +1,5 @@
 import { isMeetbon } from '@glaszetter/shared';
-import { getMeetbon, saveMeetbon } from '../services/meetbonService';
+import { deleteMeetbon, getMeetbon, saveMeetbon } from '../services/meetbonService';
 import { generateMeetbonPdf, getMeetbonPdfInput } from '../services/meetbonPdfService';
 import { Router, type NextFunction, type Request, type Response } from 'express';
 import { requireAuth } from '../middleware/auth';
@@ -13,6 +13,8 @@ import {
   updateJob,
   type JobInput,
 } from '../services/jobService';
+
+const hasRevision = (d: { revision?: unknown }) => d.revision === null || (typeof d.revision === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(d.revision));
 
 export const jobsRouter = Router();
 
@@ -65,11 +67,24 @@ jobsRouter.get('/:id/meetbon', async (req: Request, res: Response, next: NextFun
 });
 jobsRouter.put('/:id/meetbon', async (req: Request, res: Response, next: NextFunction) => {
   if (!isMeetbon(req.body)) {
-    res.status(400).json({ success: false, error: { code: 'INVALID_INPUT', message: 'Controleer de meetbon: aantal en maten moeten positief zijn.' } });
+    res.status(400).json({ success: false, error: { code: 'INVALID_INPUT', message: 'Controleer aantallen, maten en teksten (maximaal 2000 tekens per tekstveld; geen ongeldige Unicode of NUL).' } });
     return;
   }
+  if (!hasRevision(req.body)) { res.status(409).json({ success: false, error: { code: 'MEETBON_CHANGED', message: 'Open de meetbon opnieuw in de bijgewerkte app voordat je opslaat.' } }); return; }
   try { res.json({ success: true, data: await saveMeetbon(req.auth!.companyId, req.params.id, req.body) }); }
   catch (err) { handleNotFound(err, res, next); }
+});
+
+jobsRouter.delete('/:id/meetbon', async (req: Request, res: Response, next: NextFunction) => {
+  if (!isMeetbon(req.body)) {
+    res.status(400).json({ success: false, error: { code: 'INVALID_INPUT', message: 'De laatst geladen meetbon is vereist om veilig te verwijderen.' } });
+    return;
+  }
+  if (!hasRevision(req.body)) { res.status(409).json({ success: false, error: { code: 'MEETBON_CHANGED', message: 'Open de meetbon opnieuw voordat je verwijdert.' } }); return; }
+  try {
+    await deleteMeetbon(req.auth!.companyId, req.params.id, req.body);
+    res.status(204).send();
+  } catch (err) { handleNotFound(err, res, next); }
 });
 
 jobsRouter.get('/:id', async (req: Request, res: Response, next: NextFunction) => {

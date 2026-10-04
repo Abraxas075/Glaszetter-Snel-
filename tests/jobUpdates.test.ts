@@ -40,7 +40,7 @@ before(async () => {
       created_at timestamptz NOT NULL DEFAULT now(),
       updated_at timestamptz NOT NULL DEFAULT now()
     );
-    CREATE TABLE meetbons (job_id uuid PRIMARY KEY REFERENCES jobs(id) ON DELETE CASCADE, data jsonb NOT NULL, updated_at timestamptz DEFAULT now());
+    CREATE TABLE meetbons (job_id uuid PRIMARY KEY REFERENCES jobs(id) ON DELETE CASCADE, data jsonb NOT NULL, revision uuid NOT NULL DEFAULT gen_random_uuid(), updated_at timestamptz DEFAULT now());
     CREATE TABLE elements (job_id uuid NOT NULL);
     CREATE TABLE measurements (job_id uuid NOT NULL);
     CREATE TABLE photos (job_id uuid NOT NULL);
@@ -170,13 +170,146 @@ test('work data protects a job from deletion, while an empty job can be deleted'
 
  test('meetbon persists across reloads, protects deletion and is isolated by company', async () => {
   const { saveMeetbon, getMeetbon } = await import('../packages/api/src/services/meetbonService');
-  const data = { fields: { name: 'Testklant' }, checks: { g1c0: true }, lines: [{ quantity: 2, width: 875, height: 484, glassType: 'HR++', notes: 'Woonkamer' }] };
-  assert.deepEqual(await getMeetbon(companyId, jobId), { fields: {}, checks: {}, lines: [] });
-  await saveMeetbon(companyId, jobId, data);
-  assert.deepEqual(await getMeetbon(companyId, jobId), data);
+  const data = { revision: null, fields: { name: 'Testklant' }, checks: { g1c0: true }, lines: [{ quantity: 2, width: 875, height: 484, glassType: 'HR++', notes: 'Woonkamer' }] };
+  assert.deepEqual(await getMeetbon(companyId, jobId), { fields: {}, checks: {}, lines: [], revision: null });
+  const saved = await saveMeetbon(companyId, jobId, data);
+  assert.deepEqual(await getMeetbon(companyId, jobId), saved);
   await assert.rejects(getMeetbon(otherCompanyId, jobId), /not found/i);
   await assert.rejects(saveMeetbon(otherCompanyId, jobId, data), /not found/i);
   await assert.rejects(service.deleteJob(companyId, jobId), /meetbon/i);
   await service.updateJob(companyId, jobId, { notes: 'Nieuwe notitie' });
-  assert.deepEqual(await getMeetbon(companyId, jobId), data);
+  assert.deepEqual(await getMeetbon(companyId, jobId), saved);
+});
+
+test('a saved empty bon does not block deletion of an otherwise empty job', async () => {
+  const { saveMeetbon } = await import('../packages/api/src/services/meetbonService');
+  await saveMeetbon(companyId, jobId, { revision: null, fields: { name: '' }, checks: { g1c0: false }, lines: [] });
+  await service.deleteJob(companyId, jobId);
+  assert.equal((await db.query('SELECT * FROM meetbons')).rows.length, 0);
+});
+
+for (const data of [
+  { fields: { name: ' ' }, checks: {}, lines: [] },
+  { fields: {}, checks: { g1c0: true }, lines: [] },
+  { fields: {}, checks: {}, lines: [{ quantity: 1, width: 1, height: 1, glassType: '', notes: '' }] },
+  { fields: {}, checks: {}, lines: [], legacy: 'Bewaren' },
+  { fields: {}, checks: {} },
+]) test(`any content or malformed legacy bon protects the job: ${JSON.stringify(data)}`, async () => {
+  await db.query('INSERT INTO meetbons (job_id, data) VALUES ($1, $2::jsonb)', [jobId, JSON.stringify(data)]);
+  await assert.rejects(service.deleteJob(companyId, jobId), /meetbon/i);
+  assert.deepEqual((await db.query('SELECT data FROM meetbons')).rows[0].data, data);
+});
+
+for (const table of ['elements', 'measurements', 'photos', 'quotes', 'invoices']) {
+  test(`even an empty bon keeps a job with ${table} protected`, async () => {
+    const { saveMeetbon } = await import('../packages/api/src/services/meetbonService');
+    await saveMeetbon(companyId, jobId, { fields: {}, checks: {}, lines: [], revision: null });
+    await db.query(`INSERT INTO ${table} VALUES ($1)`, [jobId]);
+    await assert.rejects(service.deleteJob(companyId, jobId), /meetbon/i);
+    assert.equal((await db.query(`SELECT * FROM ${table}`)).rows.length, 1);
+  });
+}
+
+test('delete bon requires the current snapshot, respects company isolation and preserves all work data', async () => {
+  const { saveMeetbon, getMeetbon, deleteMeetbon } = await import('../packages/api/src/services/meetbonService');
+  let first = { revision: null as string | null, fields: { name: 'Eerste' }, checks: {}, lines: [] };
+  let latest = { ...first, fields: { name: 'Nieuwere invoer' } };
+  first = await saveMeetbon(companyId, jobId, first) as typeof first;
+  for (const table of ['elements', 'measurements', 'photos', 'quotes', 'invoices']) await db.query(`INSERT INTO ${table} VALUES ($1)`, [jobId]);
+  latest = await saveMeetbon(companyId, jobId, { ...latest, revision: first.revision }) as typeof latest;
+  await assert.rejects(deleteMeetbon(otherCompanyId, jobId, latest), /not found/i);
+  await assert.rejects(deleteMeetbon(companyId, jobId, first), (e: any) => e.code === 'MEETBON_CHANGED');
+  assert.deepEqual(await getMeetbon(companyId, jobId), latest);
+  await deleteMeetbon(companyId, jobId, latest);
+  assert.deepEqual(await getMeetbon(companyId, jobId), { fields: {}, checks: {}, lines: [], revision: null });
+  assert.equal((await service.getJob(companyId, jobId)).notes, 'Bewaren');
+  for (const table of ['elements', 'measurements', 'photos', 'quotes', 'invoices']) assert.equal((await db.query(`SELECT * FROM ${table}`)).rows.length, 1);
+  await deleteMeetbon(companyId, jobId, latest); // idempotent retry
+});
+
+test('actual HTTP meetbon storage accepts maximum valid content, bounds requests and preserves saved data on rejection', async () => {
+  const previousSecret = process.env.JWT_SECRET;
+  process.env.JWT_SECRET = 'disposable-storage-test-key';
+  const { default: jwt } = await import('jsonwebtoken');
+  const { default: app } = await import('../packages/api/src/app');
+  const { MEETBON_SECTIONS, isMeetbon } = await import('@glaszetter/shared');
+  const { getMeetbon } = await import('../packages/api/src/services/meetbonService');
+  const token = jwt.sign({ companyId, userId: companyId, role: 'admin' }, process.env.JWT_SECRET);
+  const server = app.listen(0);
+  await new Promise<void>(resolve => server.once('listening', resolve));
+  const base = `http://127.0.0.1:${(server.address() as any).port}/api/v1`;
+  const request = (path: string, body: string, method = 'PUT', authenticated = true) => fetch(`${base}${path}`, {
+    method, headers: { 'Content-Type': 'application/json', ...(authenticated ? { Authorization: `Bearer ${token}` } : {}) }, body,
+  });
+  try {
+    // U+0001 is JSON-escaped to six bytes and supported by PostgreSQL jsonb (unlike U+0000).
+    const text = '\u0001'.repeat(2000);
+    const data = {
+      revision: null,
+      fields: Object.fromEntries(MEETBON_SECTIONS.flatMap(s => s.fields.map(f => [f.key, text]))),
+      checks: Object.fromEntries(MEETBON_SECTIONS.flatMap(s => s.checks.map(c => [c.key, true]))),
+      lines: Array.from({ length: 200 }, () => ({ quantity: 10000, width: 100000, height: 100000, glassType: text, notes: text })),
+    };
+    assert.equal(isMeetbon(data), true);
+    const body = JSON.stringify(data);
+    assert.ok(Buffer.byteLength(body) > 2 * 1024 * 1024);
+    const response = await request(`/jobs/${jobId}/meetbon`, body);
+    assert.equal(response.status, 200);
+    const saved = (await response.json()).data;
+    assert.deepEqual(await getMeetbon(companyId, jobId), saved);
+    const stale = await request(`/jobs/${jobId}/meetbon`, body);
+    assert.equal(stale.status, 409);
+    assert.equal((await stale.json()).error.code, 'MEETBON_CHANGED');
+    const { revision: ignored, ...unversioned } = saved;
+    assert.equal((await request(`/jobs/${jobId}/meetbon`, JSON.stringify(unversioned))).status, 409);
+    assert.equal((await request(`/jobs/${jobId}/meetbon`, JSON.stringify({ ...saved, revision: 'broken' }))).status, 409);
+    const huge = JSON.stringify({ content: 'x'.repeat(8 * 1024 * 1024) });
+    const tooLarge = await request(`/jobs/${jobId}/meetbon`, huge);
+    assert.equal(tooLarge.status, 413);
+    assert.equal((await tooLarge.json()).error.code, 'REQUEST_TOO_LARGE');
+    assert.deepEqual(await getMeetbon(companyId, jobId), saved);
+    assert.equal((await request(`/jobs/${jobId}`, JSON.stringify({ notes: 'x'.repeat(110000) }), 'PATCH')).status, 413);
+    assert.equal((await request(`/jobs/${jobId}/meetbon`, '{}', 'PUT', false)).status, 401);
+    const invalid = await request(`/jobs/${jobId}/meetbon`, '{');
+    assert.equal(invalid.status, 400);
+    assert.equal((await invalid.json()).error.code, 'INVALID_JSON');
+    assert.equal((await request(`/jobs/${jobId}/meetbon`, '{}', 'DELETE')).status, 400);
+    assert.deepEqual(await getMeetbon(companyId, jobId), saved);
+    assert.equal((await request(`/jobs/${jobId}/meetbon`, JSON.stringify(saved), 'DELETE')).status, 204);
+    assert.equal((await fetch(`${base}/jobs/${jobId}/meetbon/pdf`, { headers: { Authorization: `Bearer ${token}` } })).status, 404);
+  } finally {
+    server.closeAllConnections();
+    await new Promise<void>((resolve, reject) => server.close(e => e ? reject(e) : resolve()));
+    if (previousSecret === undefined) delete process.env.JWT_SECRET; else process.env.JWT_SECRET = previousSecret;
+  }
+});
+
+test('concurrent writers have one winner, stale clients and unversioned clients cannot overwrite', async () => {
+  const { saveMeetbon, getMeetbon } = await import('../packages/api/src/services/meetbonService');
+  const base = await getMeetbon(companyId, jobId);
+  const results = await Promise.allSettled([
+    saveMeetbon(companyId, jobId, { ...base, fields: { name: 'Web' } }),
+    saveMeetbon(companyId, jobId, { ...base, fields: { name: 'Expo' } }),
+  ]);
+  assert.equal(results.filter(r => r.status === 'fulfilled').length, 1);
+  assert.equal((results.find(r => r.status === 'rejected') as PromiseRejectedResult).reason.code, 'MEETBON_CHANGED');
+  const saved = await getMeetbon(companyId, jobId);
+  await assert.rejects(saveMeetbon(companyId, jobId, base), (e: any) => e.code === 'MEETBON_CHANGED');
+  await assert.rejects(saveMeetbon(companyId, jobId, { fields: {}, checks: {}, lines: [] }), (e: any) => e.code === 'MEETBON_CHANGED');
+  const updates = await Promise.allSettled([
+    saveMeetbon(companyId, jobId, { ...saved, fields: { name: 'A' } }),
+    saveMeetbon(companyId, jobId, { ...saved, fields: { name: 'B' } }),
+  ]);
+  assert.equal(updates.filter(r => r.status === 'fulfilled').length, 1);
+});
+
+test('delete and recreation cannot reuse an old revision even with identical content', async () => {
+  const { saveMeetbon, getMeetbon, deleteMeetbon } = await import('../packages/api/src/services/meetbonService');
+  const first = await saveMeetbon(companyId, jobId, { ...(await getMeetbon(companyId, jobId)), fields: { name: 'Klant' } });
+  await deleteMeetbon(companyId, jobId, first);
+  await assert.rejects(saveMeetbon(companyId, jobId, first), (e: any) => e.code === 'MEETBON_CHANGED');
+  const next = await saveMeetbon(companyId, jobId, { ...first, revision: null });
+  assert.notEqual(first.revision, next.revision);
+  await assert.rejects(deleteMeetbon(companyId, jobId, first), (e: any) => e.code === 'MEETBON_CHANGED');
+  assert.deepEqual(await getMeetbon(companyId, jobId), next);
 });

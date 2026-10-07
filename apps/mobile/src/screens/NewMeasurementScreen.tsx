@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -9,14 +9,14 @@ import {
   ActivityIndicator,
   Image,
 } from 'react-native';
-import type { ElementType } from '@glaszetter/shared';
+import type { ElementType, Photo } from '@glaszetter/shared';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/Button';
 import { ApiError } from '../api/client';
-import { createElementWithMeasurement, suggestNextCode } from '../api/elements';
-import { parseVoiceTranscript } from '../api/measurements';
-import { uploadPhoto, type PickedPhoto } from '../api/photos';
+import { createElementWithMeasurement, getElement, updateElement, suggestNextCode } from '../api/elements';
+import { getLatestMeasurement, updateMeasurement, parseVoiceTranscript } from '../api/measurements';
+import { listPhotos, uploadPhoto, type PickedPhoto } from '../api/photos';
 import { useVoiceCapture } from '../hooks/useVoiceCapture';
 import { pickPhotoFromLibrary, takePhotoWithCamera } from '../hooks/usePhotoPicker';
 import { ELEMENT_TYPE_LABELS, ELEMENT_TYPES } from '../constants/elementTypes';
@@ -25,11 +25,12 @@ import { createMeasurementSaveSession } from '../utils/measurementSave';
 
 interface NewMeasurementScreenProps {
   jobId: string;
+  elementId?: string;
 }
 
 type Tab = 'manual' | 'voice';
 
-export const NewMeasurementScreen: React.FC<NewMeasurementScreenProps> = ({ jobId }) => {
+export const NewMeasurementScreen: React.FC<NewMeasurementScreenProps> = ({ jobId, elementId }) => {
   const router = useRouter();
   const { token } = useAuth();
   const voice = useVoiceCapture();
@@ -45,6 +46,43 @@ export const NewMeasurementScreen: React.FC<NewMeasurementScreenProps> = ({ jobI
   const [notes, setNotes] = useState('');
   const [photos, setPhotos] = useState<PickedPhoto[]>([]);
   const [savedElementId, setSavedElementId] = useState<string | null>(null);
+
+  const [measurementId, setMeasurementId] = useState<string | null>(null);
+  const [storedPhotos, setStoredPhotos] = useState<Photo[]>([]);
+  const [isLoading, setIsLoading] = useState(Boolean(elementId));
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
+
+  useEffect(() => {
+    if (!elementId || !token) return;
+    let active = true;
+    setIsLoading(true);
+    setLoadError(null);
+    Promise.all([
+      getElement(token, elementId),
+      getLatestMeasurement(token, elementId),
+      listPhotos(token, { elementId }),
+    ]).then(([element, measurement, existingPhotos]) => {
+      if (!active) return;
+      if (element.jobId !== jobId || measurement.elementId !== elementId) {
+        throw new Error('Deze meting hoort niet bij de geopende klus.');
+      }
+      setCode(element.code);
+      setType(element.type);
+      setLocation(element.location ?? '');
+      setWidth(String(measurement.width));
+      setHeight(String(measurement.height));
+      setGlassType(measurement.glassType ?? '');
+      setNotes(measurement.notes ?? '');
+      setMeasurementId(measurement.id);
+      setStoredPhotos(existingPhotos);
+    }).catch((err) => {
+      if (active) setLoadError(err instanceof Error ? err.message : 'Kon de meting niet laden.');
+    }).finally(() => {
+      if (active) setIsLoading(false);
+    });
+    return () => { active = false; };
+  }, [elementId, jobId, token, loadAttempt]);
 
   const [isParsing, setIsParsing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -96,7 +134,7 @@ export const NewMeasurementScreen: React.FC<NewMeasurementScreenProps> = ({ jobI
   };
 
   const handleSave = async () => {
-    if (!token || isParsing || saveSession.current.isSaving) return;
+    if (!token || isLoading || loadError || (elementId && !measurementId) || isParsing || saveSession.current.isSaving) return;
     setError(null);
 
     const widthNum = parseFloat(width.replace(',', '.'));
@@ -110,8 +148,8 @@ export const NewMeasurementScreen: React.FC<NewMeasurementScreenProps> = ({ jobI
       setError('Kies een elementtype.');
       return;
     }
-    if (isNaN(widthNum) || isNaN(heightNum)) {
-      setError('Breedte en hoogte zijn verplicht.');
+    if (!Number.isFinite(widthNum) || !Number.isFinite(heightNum) || widthNum <= 0 || heightNum <= 0) {
+      setError('Vul een breedte en hoogte groter dan nul in.');
       return;
     }
 
@@ -130,7 +168,18 @@ export const NewMeasurementScreen: React.FC<NewMeasurementScreenProps> = ({ jobI
         },
         photos,
         {
-          create: (input) => createElementWithMeasurement(token, input),
+          create: async (input) => {
+            if (!elementId) return createElementWithMeasurement(token, input);
+            if (!measurementId) throw new Error('Laad eerst de opgeslagen meting.');
+            const element = await updateElement(token, elementId, {
+              code: input.code, type: input.type, location: input.location ?? '',
+            });
+            await updateMeasurement(token, measurementId, {
+              width: input.width, height: input.height,
+              glassType: input.glassType ?? '', notes: input.measurementNotes ?? '',
+            });
+            return { element };
+          },
           upload: (photo, elementId) => uploadPhoto(token, photo, { elementId }),
         }
       );
@@ -151,6 +200,21 @@ export const NewMeasurementScreen: React.FC<NewMeasurementScreenProps> = ({ jobI
       setIsSaving(false);
     }
   };
+
+  if (isLoading || loadError) {
+    return (
+      <View style={[styles.container, styles.content]}>
+        <Text style={styles.title}>Meting openen</Text>
+        {isLoading ? <ActivityIndicator color={colors.primary} /> : (
+          <>
+            <Text style={styles.error}>{loadError}</Text>
+            <Button label="Opnieuw laden" onPress={() => setLoadAttempt((value) => value + 1)} />
+          </>
+        )}
+        <Button label="Terug naar elementen" variant="secondary" onPress={() => router.back()} />
+      </View>
+    );
+  }
 
   if (savedElementId !== null) {
     return (
@@ -180,7 +244,7 @@ export const NewMeasurementScreen: React.FC<NewMeasurementScreenProps> = ({ jobI
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Nieuw element inmeten</Text>
+      <Text style={styles.title}>{elementId ? `${code} bewerken` : 'Nieuw element inmeten'}</Text>
 
       <View style={styles.tabs} pointerEvents={isSaving ? 'none' : 'auto'}>
         <TouchableOpacity
@@ -333,6 +397,14 @@ export const NewMeasurementScreen: React.FC<NewMeasurementScreenProps> = ({ jobI
               <Text style={styles.photoActionText}>🖼️ Uit galerij</Text>
             </TouchableOpacity>
           </View>
+
+          {storedPhotos.length > 0 && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photoRow}>
+              {storedPhotos.map((photo) => (
+                <Image key={photo.id} source={{ uri: photo.url }} style={styles.photoThumb} fadeDuration={0} />
+              ))}
+            </ScrollView>
+          )}
 
           {photos.length > 0 && (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photoRow}>

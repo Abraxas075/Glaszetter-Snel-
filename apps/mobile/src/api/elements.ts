@@ -38,3 +38,15 @@ export const createElementWithMeasurement = (
     token,
     body: JSON.stringify(input),
   });
+
+export const getElement = (token: string, id: string): Promise<Element> =>
+  apiRequest<Element>(`/elements/${id}`, { token });
+
+export const updateElement = (
+  token: string,
+  id: string,
+  input: { code: string; type: ElementType; location: string }
+): Promise<Element> =>
+  apiRequest<Element>(`/elements/${id}`, {
+    method: 'PATCH', token, body: JSON.stringify(input),
+  });

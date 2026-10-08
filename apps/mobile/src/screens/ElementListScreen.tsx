@@ -137,11 +137,17 @@ export const ElementListScreen: React.FC<ElementListScreenProps> = ({ jobId }) =
           keyExtractor={(el) => el.id}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
-            <View style={styles.card}>
+            <TouchableOpacity
+              style={styles.card}
+              accessibilityRole="button"
+              accessibilityLabel={`${item.code} openen en bewerken`}
+              onPress={() => router.push(`/jobs/${jobId}/elements/${item.id}`)}
+            >
               <Text style={styles.code}>{item.code}</Text>
               <Text style={styles.type}>{ELEMENT_TYPE_LABELS[item.type]}</Text>
               {item.location && <Text style={styles.location}>{item.location}</Text>}
-            </View>
+              <Text style={styles.location}>Openen en bewerken ›</Text>
+            </TouchableOpacity>
           )}
         />
       )}

@@ -1,10 +1,28 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+} from 'react-native';
 import type { Job } from '@glaszetter/shared';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '../contexts/AuthContext';
 import { listMyJobs } from '../api/jobs';
-import { colors, spacing, radius } from '../constants/colors';
+import { spacing } from '../constants/colors';
+import { sapphire } from '../constants/sapphire';
+import { SafeAreaView } from 'react-native-safe-area-context';
+const colors = {
+  background: sapphire.background,
+  surface: sapphire.glass,
+  border: sapphire.edge,
+  primary: sapphire.blue,
+  textPrimary: sapphire.text,
+  textSecondary: sapphire.muted,
+  error: '#FF6472',
+};
 
 const formatDate = (date?: Date): string => {
   if (!date) return 'Nog niet ingepland';
@@ -17,23 +35,33 @@ export const MyJobsScreen: React.FC = () => {
   const [jobs, setJobs] = useState<Job[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!token) return;
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      if (!token) return;
+      setError(null);
+      setJobs(null);
 
-    listMyJobs(token)
-      .then((result) => {
-        const sorted = [...result.data].sort((a, b) => {
-          if (!a.scheduledDate) return 1;
-          if (!b.scheduledDate) return -1;
-          return new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime();
+      listMyJobs(token)
+        .then((result) => {
+          const sorted = [...result.data].sort((a, b) => {
+            if (!a.scheduledDate) return 1;
+            if (!b.scheduledDate) return -1;
+            return new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime();
+          });
+          if (active) setJobs(sorted);
+        })
+        .catch(() => {
+          if (active) setError('Kon klussen niet laden.');
         });
-        setJobs(sorted);
-      })
-      .catch(() => setError('Kon klussen niet laden.'));
-  }, [token]);
+      return () => {
+        active = false;
+      };
+    }, [token])
+  );
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Mijn Klussen</Text>
         <Text style={styles.subtitle}>Klussen ingepland voor jouw team</Text>
@@ -41,7 +69,9 @@ export const MyJobsScreen: React.FC = () => {
 
       {error && <Text style={styles.error}>{error}</Text>}
 
-      {!error && jobs === null && <ActivityIndicator style={styles.loading} color={colors.primary} />}
+      {!error && jobs === null && (
+        <ActivityIndicator style={styles.loading} color={colors.primary} />
+      )}
 
       {!error && jobs !== null && jobs.length === 0 && (
         <Text style={styles.empty}>Je hebt nog geen ingeplande klussen.</Text>
@@ -63,7 +93,7 @@ export const MyJobsScreen: React.FC = () => {
           )}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -92,7 +122,7 @@ const styles = StyleSheet.create({
   },
   jobCard: {
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
+    borderRadius: 0,
     borderWidth: 1,
     borderColor: colors.border,
     padding: spacing.lg,

@@ -80,7 +80,7 @@ export default function PlanningPage() {
 
       {teams.length > 0 && (
         <div style={{ overflowX: 'auto' }}>
-          <table style={boardTableStyle}>
+          <div className="table-scroll"><table style={boardTableStyle}>
             <thead>
               <tr>
                 <th style={boardHeaderStyle}>Team</th>
@@ -117,7 +117,7 @@ export default function PlanningPage() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         </div>
       )}
     </div>
@@ -165,7 +165,7 @@ const dayCellStyle: React.CSSProperties = {
 
 const jobBlockStyle: React.CSSProperties = {
   display: 'block',
-  color: 'var(--color-background)',
+  color: 'var(--color-on-accent)',
   borderRadius: 'var(--radius-sm)',
   padding: 'var(--spacing-xs) var(--spacing-sm)',
   marginBottom: 4,

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import { ApiError } from '../../lib/api';
+import { BrandLogo } from '../../components/BrandLogo';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -29,9 +30,10 @@ export default function LoginPage() {
   };
 
   return (
-    <main style={styles.page}>
-      <div style={styles.card}>
-        <h1 style={styles.title}>Glaszetter Snel</h1>
+    <main className="login-page">
+      <div className="login-card glass-panel">
+        <BrandLogo className="login-logo" />
+        <h1 style={styles.title}>Inloggen</h1>
         <p style={styles.subtitle}>Meer dan glaswerk, een heldere werkwijze.</p>
 
         <form onSubmit={handleSubmit} style={styles.form}>
@@ -73,22 +75,11 @@ export default function LoginPage() {
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  page: {
-    minHeight: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'var(--color-background)',
-  },
-  card: {
-    width: '100%',
-    maxWidth: 400,
-    padding: 'var(--spacing-xl)',
-  },
   title: {
     fontSize: 28,
     fontWeight: 700,
-    color: 'var(--color-secondary)',
+    color: 'var(--color-text-primary)',
+    fontFamily: 'Georgia, serif',
     textAlign: 'center',
     marginBottom: 'var(--spacing-sm)',
   },
@@ -127,7 +118,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: 'var(--spacing-md)',
     borderRadius: 'var(--radius-md)',
     backgroundColor: 'var(--color-primary)',
-    color: 'var(--color-background)',
+    color: 'var(--color-on-primary)',
     fontSize: 16,
     fontWeight: 600,
   },

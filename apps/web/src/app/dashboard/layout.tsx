@@ -20,16 +20,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div style={styles.shell}>
+    <div className="dashboard-shell">
       <Sidebar />
-      <div style={styles.main}>
-        <header style={styles.header}>
+      <div className="dashboard-main">
+        <header className="dashboard-header">
           <p style={styles.welcome}>Welkom, {user.name}</p>
           <button style={styles.logoutButton} onClick={logout}>
             Uitloggen
           </button>
         </header>
-        <div style={styles.content}>{children}</div>
+        <main id="main-content" className="dashboard-content">
+          {children}
+        </main>
       </div>
     </div>
   );
@@ -41,24 +43,6 @@ const styles: Record<string, React.CSSProperties> = {
     backgroundColor: 'var(--color-background)',
     padding: 'var(--spacing-xl)',
   },
-  shell: {
-    display: 'flex',
-    minHeight: '100vh',
-    backgroundColor: 'var(--color-background)',
-  },
-  main: {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-  },
-  header: {
-    display: 'flex',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    gap: 'var(--spacing-lg)',
-    padding: 'var(--spacing-lg) var(--spacing-xl)',
-    borderBottom: '1px solid var(--color-border)',
-  },
   welcome: {
     fontSize: 14,
     color: 'var(--color-text-secondary)',
@@ -67,12 +51,8 @@ const styles: Record<string, React.CSSProperties> = {
     padding: 'var(--spacing-sm) var(--spacing-lg)',
     borderRadius: 'var(--radius-md)',
     backgroundColor: 'var(--color-accent)',
-    color: 'var(--color-background)',
+    color: 'var(--color-on-accent)',
     fontSize: 14,
     fontWeight: 600,
-  },
-  content: {
-    flex: 1,
-    padding: 'var(--spacing-xl)',
   },
 };

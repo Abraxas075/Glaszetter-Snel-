@@ -105,7 +105,7 @@ export default function PublicQuotePage() {
         <p style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginBottom: 4 }}>Klant</p>
         <p style={{ marginBottom: 20 }}>{customer.name}</p>
 
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20 }}>
+        <div className="table-scroll"><table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20 }}>
           <thead>
             <tr>
               <th style={thStyle}>Omschrijving</th>
@@ -124,7 +124,7 @@ export default function PublicQuotePage() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
 
         <div style={{ maxWidth: 280, marginLeft: 'auto', marginBottom: 24 }}>
           <div style={totalsRowStyle}>
@@ -254,7 +254,7 @@ const buttonStyle: React.CSSProperties = {
   padding: '10px 20px',
   borderRadius: 'var(--radius-md)',
   backgroundColor: 'var(--color-primary)',
-  color: 'var(--color-background)',
+  color: 'var(--color-on-primary)',
   fontSize: 14,
   fontWeight: 600,
   border: 'none',

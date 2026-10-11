@@ -3,11 +3,14 @@ export const pageStyles: Record<string, React.CSSProperties> = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 'var(--spacing-md)',
     marginBottom: 'var(--spacing-xl)',
   },
   title: {
-    fontSize: 22,
-    fontWeight: 700,
+    fontSize: 30,
+    fontWeight: 500,
+    fontFamily: 'Georgia, serif',
     color: 'var(--color-text-primary)',
   },
   empty: {
@@ -42,7 +45,7 @@ export const pageStyles: Record<string, React.CSSProperties> = {
     padding: 'var(--spacing-sm) var(--spacing-lg)',
     borderRadius: 'var(--radius-md)',
     backgroundColor: 'var(--color-primary)',
-    color: 'var(--color-background)',
+    color: 'var(--color-on-primary)',
     fontSize: 14,
     fontWeight: 600,
   },
@@ -56,6 +59,8 @@ export const pageStyles: Record<string, React.CSSProperties> = {
 export const formStyles: Record<string, React.CSSProperties> = {
   card: {
     backgroundColor: 'var(--color-surface)',
+    backgroundImage: 'var(--glass-reflection)',
+    boxShadow: 'var(--glass-frame)',
     border: '1px solid var(--color-border)',
     borderRadius: 'var(--radius-md)',
     padding: 'var(--spacing-xl)',
@@ -93,7 +98,7 @@ export const formStyles: Record<string, React.CSSProperties> = {
     padding: 'var(--spacing-md) var(--spacing-xl)',
     borderRadius: 'var(--radius-md)',
     backgroundColor: 'var(--color-primary)',
-    color: 'var(--color-background)',
+    color: 'var(--color-on-primary)',
     fontSize: 15,
     fontWeight: 600,
   },

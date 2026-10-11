@@ -279,27 +279,32 @@ tbody tr:hover {
   filter: brightness(1.12);
 }
 .meetbon-section {
-  margin-top: 32px;
+  margin-top: 24px;
 }
 .meetbon-section > h2 {
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 .meetbon-description {
   color: var(--color-text-secondary);
-  line-height: 1.6;
-  margin: 12px 0;
+  line-height: 1.45;
+  margin: 8px 0;
   max-width: 78ch;
 }
 .meetbon-section fieldset {
   min-width: 0;
 }
 .meetbon-fields > label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 600;
   min-width: 0;
   overflow-wrap: anywhere;
 }
 .meetbon-panel {
-  padding: 20px;
-  margin-top: 20px;
+  padding: 14px;
+  margin-top: 12px;
   min-width: 0;
 }
 .meetbon-panel legend {
@@ -311,7 +316,10 @@ tbody tr:hover {
 .meetbon-fields {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
-  gap: 16px;
+  gap: 10px;
+}
+.meetbon-fields input {
+  min-height: 44px;
 }
 .meetbon-line-fields {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
@@ -319,9 +327,9 @@ tbody tr:hover {
 .meetbon-check {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   min-height: 44px;
-  margin: 8px 16px 0 0;
+  margin: 4px 12px 0 0;
   cursor: pointer;
   max-width: 100%;
   overflow-wrap: anywhere;
@@ -340,17 +348,17 @@ tbody tr:hover {
   overflow-wrap: anywhere;
 }
 .meetbon-lines-title {
-  margin-top: 28px;
+  margin-top: 20px;
   line-height: 1.5;
 }
 .meetbon-add-line {
-  margin: 16px 0 12px;
+  margin: 12px 0 8px;
 }
 .meetbon-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  margin: 24px 0 12px;
+  margin: 16px 0 8px;
 }
 
 /* Rode details sluiten aan op het SNEL-logo. */
@@ -441,7 +449,7 @@ tbody tr:hover {
     padding: 24px;
   }
   .meetbon-panel {
-    padding: 16px;
+    padding: 12px;
   }
   .meetbon-actions > button {
     width: 100%;

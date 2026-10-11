@@ -96,7 +96,7 @@ export function MeetbonForm({ jobId }: { jobId: string }) {
         {MEETBON_SECTIONS.map(section => <fieldset key={section.title} className="glass-panel meetbon-panel">
           <legend>{section.title}</legend>
           <div className="meetbon-fields">
-            {section.fields.map(f => <label key={f.key} style={formStyles.label}>{f.label}<input maxLength={2000} style={formStyles.input} value={data.fields[f.key] ?? ''} onChange={e => setData({ ...data, fields: { ...data.fields, [f.key]: e.target.value } })} /></label>)}
+            {section.fields.map(f => <label key={f.key}>{f.label}<input maxLength={2000} style={formStyles.input} value={data.fields[f.key] ?? ''} onChange={e => setData({ ...data, fields: { ...data.fields, [f.key]: e.target.value } })} /></label>)}
           </div>
           {section.checks.map(c => <label key={c.key} className="meetbon-check"><input type="checkbox" checked={data.checks[c.key] ?? false} onChange={e => setData({ ...data, checks: { ...data.checks, [c.key]: e.target.checked } })} />{c.label}</label>)}
           {section.title === 'Extra werkzaamheden' && <p>Bij schilderwerk: voeg foto’s toe bij de klus.</p>}

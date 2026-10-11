@@ -290,6 +290,15 @@ tbody tr:hover {
   margin: 8px 0;
   max-width: 78ch;
 }
+.meetbon-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 4px;
+}
+.meetbon-toolbar > button {
+  padding: 10px 14px;
+}
 .meetbon-section fieldset {
   min-width: 0;
 }
@@ -520,6 +529,9 @@ tbody tr:hover {
   }
   .meetbon-panel {
     padding: 12px;
+  }
+  .meetbon-toolbar > button {
+    flex: 1;
   }
   .meetbon-disclosure > summary {
     flex-wrap: wrap;

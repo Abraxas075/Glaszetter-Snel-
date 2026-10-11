@@ -1,9 +1,13 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { compareMeetbons, resolveMeetbonComparison, type MeetbonComparison, emptyMeetbon, isMeetbon, MEETBON_SECTIONS, type Meetbon } from '@glaszetter/shared';
 import { ApiError, apiRequest, fetchBlob } from '../lib/api';
 import { formStyles, pageStyles } from '../styles/shared';
 export function MeetbonForm({ jobId }: { jobId: string }) {
+  const formRef = useRef<HTMLFormElement>(null);
+  function setSectionsExpanded(expanded: boolean) {
+    formRef.current?.querySelectorAll<HTMLDetailsElement>('.meetbon-disclosure').forEach(section => { section.open = expanded; });
+  }
   const [data, setData] = useState<Meetbon>(emptyMeetbon);
   const [savedData, setSavedData] = useState<Meetbon>(emptyMeetbon);
   const [comparison, setComparison] = useState<MeetbonComparison | null>(null);
@@ -91,13 +95,17 @@ export function MeetbonForm({ jobId }: { jobId: string }) {
       </fieldset>)}
       <button className="sapphire-button" type="button" onClick={applyComparison}>Verschillen verwerken</button>
     </aside>}
-    <form onSubmit={save} onInvalidCapture={e => {
+    <form ref={formRef} onSubmit={save} onInvalidCapture={e => {
       let parent = (e.target as HTMLElement).parentElement;
       while (parent) {
         if (parent instanceof HTMLDetailsElement) parent.open = true;
         parent = parent.parentElement;
       }
     }}>
+      <div className="meetbon-toolbar" role="group" aria-label="Meetbonsecties openen of sluiten">
+        <button className="sapphire-button sapphire-button-secondary" type="button" onClick={() => setSectionsExpanded(true)}>Alles openen</button>
+        <button className="sapphire-button sapphire-button-secondary" type="button" onClick={() => setSectionsExpanded(false)}>Alles sluiten</button>
+      </div>
       <fieldset disabled={!loaded || busy || !!comparison} style={{ border: 0, padding: 0 }}>
         {MEETBON_SECTIONS.map(section => {
           const filled = section.fields.filter(f => !!data.fields[f.key]?.trim()).length + section.checks.filter(c => data.checks[c.key]).length;

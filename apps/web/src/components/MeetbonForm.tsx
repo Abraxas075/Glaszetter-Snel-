@@ -91,17 +91,32 @@ export function MeetbonForm({ jobId }: { jobId: string }) {
       </fieldset>)}
       <button className="sapphire-button" type="button" onClick={applyComparison}>Verschillen verwerken</button>
     </aside>}
-    <form onSubmit={save}>
+    <form onSubmit={save} onInvalidCapture={e => {
+      let parent = (e.target as HTMLElement).parentElement;
+      while (parent) {
+        if (parent instanceof HTMLDetailsElement) parent.open = true;
+        parent = parent.parentElement;
+      }
+    }}>
       <fieldset disabled={!loaded || busy || !!comparison} style={{ border: 0, padding: 0 }}>
-        {MEETBON_SECTIONS.map(section => <fieldset key={section.title} className="glass-panel meetbon-panel">
-          <legend>{section.title}</legend>
+        {MEETBON_SECTIONS.map(section => {
+          const filled = section.fields.filter(f => !!data.fields[f.key]?.trim()).length + section.checks.filter(c => data.checks[c.key]).length;
+          return <details key={`${jobId}-${section.title}`} className="glass-panel meetbon-panel meetbon-disclosure" open={section.title === 'Klantgegevens'}>
+          <summary><span>{section.title}</span>{filled > 0 && <span className="meetbon-filled">{filled} ingevuld</span>}<span className="meetbon-disclosure-icon" aria-hidden="true" /></summary>
+          <fieldset className="meetbon-disclosure-content">
+          <legend className="sr-only">{section.title}</legend>
           <div className="meetbon-fields">
             {section.fields.map(f => <label key={f.key}>{f.label}<input maxLength={2000} style={formStyles.input} value={data.fields[f.key] ?? ''} onChange={e => setData({ ...data, fields: { ...data.fields, [f.key]: e.target.value } })} /></label>)}
           </div>
           {section.checks.map(c => <label key={c.key} className="meetbon-check"><input type="checkbox" checked={data.checks[c.key] ?? false} onChange={e => setData({ ...data, checks: { ...data.checks, [c.key]: e.target.checked } })} />{c.label}</label>)}
           {section.title === 'Extra werkzaamheden' && <p>Bij schilderwerk: voeg foto’s toe bij de klus.</p>}
-        </fieldset>)}
-        <h3 className="meetbon-lines-title">Ruiten — aantal, breedte × hoogte, soort glas en opmerking</h3>
+          </fieldset>
+        </details>})}
+        <details key={`${jobId}-ruiten`} className="glass-panel meetbon-panel meetbon-disclosure" open>
+          <summary><span>Ruiten</span><span className="meetbon-filled">{data.lines.length} {data.lines.length === 1 ? 'ruit' : 'ruiten'}</span><span className="meetbon-disclosure-icon" aria-hidden="true" /></summary>
+          <fieldset className="meetbon-disclosure-content">
+          <legend className="sr-only">Ruiten</legend>
+          <p className="meetbon-description">Aantal, breedte × hoogte, soort glas en opmerking</p>
         {data.lines.map((line, index) => <fieldset key={index} className="glass-panel meetbon-panel">
           <legend>Ruit {index + 1}</legend>
           <div className="meetbon-fields meetbon-line-fields">
@@ -111,6 +126,8 @@ export function MeetbonForm({ jobId }: { jobId: string }) {
         </fieldset>)}
         <button className="sapphire-button sapphire-button-secondary meetbon-add-line" type="button" disabled={data.lines.length >= 200} onClick={() => setData({ ...data, lines: [...data.lines, { quantity: 1, width: 0, height: 0, glassType: '', notes: '' }] })}>＋ Ruit toevoegen</button>
         <p>Totaal: {data.lines.reduce((n, l) => n + l.quantity * l.width * l.height / 1e6, 0).toLocaleString('nl-NL', { maximumFractionDigits: 3 })} m²</p>
+          </fieldset>
+        </details>
         <div className="meetbon-actions">
         <button className="sapphire-button" type="submit">{busy && !exporting ? 'Opslaan…' : 'Meetbon opslaan'}</button>
         <button className="sapphire-button" type="button" onClick={downloadPdf}>

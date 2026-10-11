@@ -26,6 +26,8 @@
   --spacing-lg: 16px;
   --spacing-xl: 24px;
   --spacing-xxl: 32px;
+  --glass-reflection: linear-gradient(125deg, transparent 67%, rgba(180, 225, 240, 0.06) 67%, rgba(180, 225, 240, 0.06) 70%, transparent 70%);
+  --glass-frame: inset 0 0 0 2px var(--color-background), inset 0 0 0 3px var(--color-inner-border);
   --radius-sm: 0px;
   --radius-md: 0px;
   --radius-lg: 0px;
@@ -92,9 +94,7 @@ h1,
   isolation: isolate;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  box-shadow:
-    inset 0 0 0 2px var(--color-background),
-    inset 0 0 0 3px var(--color-inner-border);
+  box-shadow: var(--glass-frame);
 }
 .glass-panel::before {
   content: '';
@@ -102,13 +102,7 @@ h1,
   position: absolute;
   z-index: -1;
   inset: 0;
-  background: linear-gradient(
-    125deg,
-    transparent 67%,
-    rgba(180, 225, 240, 0.06) 67%,
-    rgba(180, 225, 240, 0.06) 70%,
-    transparent 70%
-  );
+  background: var(--glass-reflection);
 }
 .brand-logo {
   position: relative;
@@ -139,6 +133,7 @@ h1,
   justify-content: flex-end;
   align-items: center;
   gap: 20px;
+  flex-wrap: wrap;
   padding: 16px 32px;
   border-bottom: 1px solid var(--color-inner-border);
 }
@@ -177,6 +172,7 @@ h1,
   color: var(--color-text-primary);
   background: var(--color-surface);
   border: 1px solid var(--color-inner-border);
+  box-shadow: var(--glass-frame);
 }
 .sidebar-link svg {
   flex-shrink: 0;
@@ -255,6 +251,102 @@ tbody tr:hover {
   max-width: 100%;
   overflow-x: auto;
 }
+
+.sapphire-button {
+  padding: 12px 20px;
+  font-weight: 600;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  border: 1px solid transparent;
+}
+.sapphire-button-secondary {
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  border-color: var(--color-border);
+  box-shadow: var(--glass-frame);
+}
+.sapphire-button-danger {
+  color: var(--color-error);
+  border-color: var(--color-error);
+}
+.sapphire-button:hover:not(:disabled) {
+  filter: brightness(1.12);
+}
+.meetbon-section {
+  margin-top: 32px;
+}
+.meetbon-section > h2 {
+  margin-bottom: 12px;
+}
+.meetbon-description {
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin: 12px 0;
+  max-width: 78ch;
+}
+.meetbon-section fieldset {
+  min-width: 0;
+}
+.meetbon-fields > label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.meetbon-panel {
+  padding: 20px;
+  margin-top: 20px;
+  min-width: 0;
+}
+.meetbon-panel legend {
+  padding: 0 10px;
+  max-width: 100%;
+  font-family: Georgia, serif;
+  font-size: 20px;
+}
+.meetbon-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+  gap: 16px;
+}
+.meetbon-line-fields {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+}
+.meetbon-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  margin: 8px 16px 0 0;
+  cursor: pointer;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.meetbon-check input {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  accent-color: var(--color-primary);
+}
+.meetbon-comparison {
+  padding: 20px;
+  margin-top: 20px;
+}
+.meetbon-comparison p {
+  overflow-wrap: anywhere;
+}
+.meetbon-lines-title {
+  margin-top: 28px;
+  line-height: 1.5;
+}
+.meetbon-add-line {
+  margin: 16px 0 12px;
+}
+.meetbon-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 24px 0 12px;
+}
+
 @media (max-width: 760px) {
   .dashboard-shell {
     flex-direction: column;
@@ -310,6 +402,12 @@ tbody tr:hover {
   .login-card {
     padding: 24px;
   }
+  .meetbon-panel {
+    padding: 16px;
+  }
+  .meetbon-actions > button {
+    width: 100%;
+  }
   .table-scroll table {
     min-width: 560px;
   }
@@ -322,6 +420,8 @@ tbody tr:hover {
     --color-background: #fff;
     --color-surface: #fff;
     --color-border: #aaa;
+    --glass-reflection: none;
+    --glass-frame: none;
   }
   .sapphire-sidebar,
   .dashboard-header {

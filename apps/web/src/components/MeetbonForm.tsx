@@ -78,45 +78,47 @@ export function MeetbonForm({ jobId }: { jobId: string }) {
     if (!loaded || busy || !!comparison) return;
     if (window.confirm('Meetbon verwijderen? De opgeslagen meetbon en niet-opgeslagen invoer in dit scherm worden verwijderd. Klus, inmetingen en foto’s blijven behouden.')) void removeBon();
   }
-  return <section style={{ marginTop: 32 }}>
+  return <section className="meetbon-section">
     <h2 style={pageStyles.title}>Digitale meetbon</h2>
     <a href="/templates/Meetbon_Glaszettersnel_digitaal.xlsx" download>Originele Excel-meetbon downloaden</a>
-    <p>Gebaseerd op je meetbon. Alle glasmaten zijn in mm. Opgeslagen ruiten in deze bon staan los van de ingemeten elementen.</p>
-    {comparison && <aside aria-label="Wijzigingen vergelijken" style={{ padding: 16, border: '2px solid var(--color-primary)' }}>
+    <p className="meetbon-description">Gebaseerd op je meetbon. Alle glasmaten zijn in mm. Opgeslagen ruiten in deze bon staan los van de ingemeten elementen.</p>
+    {comparison && <aside className="glass-panel meetbon-comparison" aria-label="Wijzigingen vergelijken">
       <h3>Wijzigingen vergelijken</h3><p>Niet-overlappende wijzigingen worden samengevoegd. Bij gelijktijdig gewijzigde ruiten kies je de volledige lijst.</p>
-      {comparison.conflicts.map(c => <fieldset key={c.key}><legend>{c.label}</legend>
+      {comparison.conflicts.map(c => <fieldset className="glass-panel meetbon-panel" key={c.key}><legend>{c.label}</legend>
         <p>Eigen invoer: {JSON.stringify(c.own)}</p><p>Nieuwste bon: {JSON.stringify(c.latest)}</p>
         <label><input type="radio" name={c.key} checked={choices[c.key] === 'own'} onChange={() => setChoices({ ...choices, [c.key]: 'own' })} /> Eigen invoer behouden</label>
         <label><input type="radio" name={c.key} checked={choices[c.key] === 'latest'} onChange={() => setChoices({ ...choices, [c.key]: 'latest' })} /> Nieuwste invoer behouden</label>
       </fieldset>)}
-      <button type="button" onClick={applyComparison}>Verschillen verwerken</button>
+      <button className="sapphire-button" type="button" onClick={applyComparison}>Verschillen verwerken</button>
     </aside>}
     <form onSubmit={save}>
       <fieldset disabled={!loaded || busy || !!comparison} style={{ border: 0, padding: 0 }}>
-        {MEETBON_SECTIONS.map(section => <fieldset key={section.title} style={{ border: '1px solid var(--color-primary)', borderRadius: 8, padding: 16, marginTop: 16 }}>
+        {MEETBON_SECTIONS.map(section => <fieldset key={section.title} className="glass-panel meetbon-panel">
           <legend>{section.title}</legend>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
+          <div className="meetbon-fields">
             {section.fields.map(f => <label key={f.key} style={formStyles.label}>{f.label}<input maxLength={2000} style={formStyles.input} value={data.fields[f.key] ?? ''} onChange={e => setData({ ...data, fields: { ...data.fields, [f.key]: e.target.value } })} /></label>)}
           </div>
-          {section.checks.map(c => <label key={c.key} style={{ display: 'inline-flex', gap: 8, margin: 10 }}><input type="checkbox" checked={data.checks[c.key] ?? false} onChange={e => setData({ ...data, checks: { ...data.checks, [c.key]: e.target.checked } })} />{c.label}</label>)}
+          {section.checks.map(c => <label key={c.key} className="meetbon-check"><input type="checkbox" checked={data.checks[c.key] ?? false} onChange={e => setData({ ...data, checks: { ...data.checks, [c.key]: e.target.checked } })} />{c.label}</label>)}
           {section.title === 'Extra werkzaamheden' && <p>Bij schilderwerk: voeg foto’s toe bij de klus.</p>}
         </fieldset>)}
-        <h3 style={{ marginTop: 24 }}>Ruiten — aantal, breedte × hoogte, soort glas en opmerking</h3>
-        {data.lines.map((line, index) => <fieldset key={index} style={{ marginTop: 12, padding: 12, border: '1px solid var(--color-border)' }}>
+        <h3 className="meetbon-lines-title">Ruiten — aantal, breedte × hoogte, soort glas en opmerking</h3>
+        {data.lines.map((line, index) => <fieldset key={index} className="glass-panel meetbon-panel">
           <legend>Ruit {index + 1}</legend>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
+          <div className="meetbon-fields meetbon-line-fields">
             {(['quantity', 'width', 'height', 'glassType', 'notes'] as const).map(key => <label key={key}>{({ quantity: 'Aantal', width: 'Breedte (mm)', height: 'Hoogte (mm)', glassType: 'Soort glas', notes: 'Opmerking' })[key]}<input maxLength={key === 'glassType' || key === 'notes' ? 2000 : undefined} style={formStyles.input} type={key === 'glassType' || key === 'notes' ? 'text' : 'number'} min="1" step={key === 'quantity' ? '1' : 'any'} required={key !== 'glassType' && key !== 'notes'} value={line[key] || ''} onChange={e => setData({ ...data, lines: data.lines.map((l, i) => i === index ? { ...l, [key]: key === 'glassType' || key === 'notes' ? e.target.value : Number(e.target.value) } : l) })} /></label>)}
           </div>
-          <button type="button" onClick={() => setData({ ...data, lines: data.lines.filter((_, i) => i !== index) })}>Ruit verwijderen</button>
+          <button className="sapphire-button sapphire-button-secondary" type="button" onClick={() => setData({ ...data, lines: data.lines.filter((_, i) => i !== index) })}>Ruit verwijderen</button>
         </fieldset>)}
-        <button type="button" disabled={data.lines.length >= 200} onClick={() => setData({ ...data, lines: [...data.lines, { quantity: 1, width: 0, height: 0, glassType: '', notes: '' }] })}>＋ Ruit toevoegen</button>
+        <button className="sapphire-button sapphire-button-secondary meetbon-add-line" type="button" disabled={data.lines.length >= 200} onClick={() => setData({ ...data, lines: [...data.lines, { quantity: 1, width: 0, height: 0, glassType: '', notes: '' }] })}>＋ Ruit toevoegen</button>
         <p>Totaal: {data.lines.reduce((n, l) => n + l.quantity * l.width * l.height / 1e6, 0).toLocaleString('nl-NL', { maximumFractionDigits: 3 })} m²</p>
-        <button style={formStyles.submitButton} type="submit">{busy && !exporting ? 'Opslaan…' : 'Meetbon opslaan'}</button>
-        <button style={{ ...formStyles.submitButton, marginLeft: 12 }} type="button" onClick={downloadPdf}>
+        <div className="meetbon-actions">
+        <button className="sapphire-button" type="submit">{busy && !exporting ? 'Opslaan…' : 'Meetbon opslaan'}</button>
+        <button className="sapphire-button" type="button" onClick={downloadPdf}>
           {exporting ? 'PDF maken…' : 'Opslaan en PDF downloaden'}
         </button>
-        <button type="button" onClick={confirmRemove} style={{ marginLeft: 12 }}>Meetbon verwijderen</button>
-        <p>De PDF bevat de ingevulde meetbon en beschikbare klus- en elementfoto’s. Niet ingesloten foto’s worden vermeld.</p>
+        <button className="sapphire-button sapphire-button-secondary sapphire-button-danger" type="button" onClick={confirmRemove}>Meetbon verwijderen</button>
+        </div>
+        <p className="meetbon-description">De PDF bevat de ingevulde meetbon en beschikbare klus- en elementfoto’s. Niet ingesloten foto’s worden vermeld.</p>
       </fieldset>
       <p role="status">{message || (!loaded ? 'Meetbon laden…' : '')}</p>
     </form>

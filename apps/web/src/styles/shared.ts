@@ -59,6 +59,8 @@ export const pageStyles: Record<string, React.CSSProperties> = {
 export const formStyles: Record<string, React.CSSProperties> = {
   card: {
     backgroundColor: 'var(--color-surface)',
+    backgroundImage: 'var(--glass-reflection)',
+    boxShadow: 'var(--glass-frame)',
     border: '1px solid var(--color-border)',
     borderRadius: 'var(--radius-md)',
     padding: 'var(--spacing-xl)',

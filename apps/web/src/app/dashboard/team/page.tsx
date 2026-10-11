@@ -159,7 +159,7 @@ function EmployeesSection({
 
       {users === null && <p style={pageStyles.empty}>Laden...</p>}
       {users && users.length > 0 && (
-        <table style={pageStyles.table}>
+        <div className="table-scroll"><table style={pageStyles.table}>
           <thead>
             <tr>
               <th style={pageStyles.th}>Naam</th>
@@ -176,7 +176,7 @@ function EmployeesSection({
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       )}
     </section>
   );

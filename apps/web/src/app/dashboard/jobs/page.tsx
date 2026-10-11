@@ -115,7 +115,7 @@ export default function JobsPage() {
       )}
 
       {jobs && jobs.length > 0 && (
-        <table style={pageStyles.table}>
+        <div className="table-scroll"><table style={pageStyles.table}>
           <thead>
             <tr>
               <th style={pageStyles.th}>Naam</th>
@@ -136,7 +136,7 @@ export default function JobsPage() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       )}
     </div>
   );

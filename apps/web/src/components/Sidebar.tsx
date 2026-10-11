@@ -1,37 +1,80 @@
 'use client';
 
+import { useState } from 'react';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '../contexts/AuthContext';
+import { BrandLogo } from './BrandLogo';
 
 const NAV_ITEMS = [
-  { href: '/dashboard', label: 'Dashboard' },
-  { href: '/dashboard/customers', label: 'Klanten' },
-  { href: '/dashboard/projects', label: 'Projecten' },
-  { href: '/dashboard/jobs', label: 'Klussen' },
-  { href: '/dashboard/planning', label: 'Planning' },
-  { href: '/dashboard/quotes', label: 'Offertes' },
-  { href: '/dashboard/invoices', label: 'Facturen' },
+  {
+    href: '/dashboard',
+    label: 'Dashboard',
+    icon: 'M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z',
+  },
+  {
+    href: '/dashboard/customers',
+    label: 'Klanten',
+    icon: 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8 M22 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75',
+  },
+  { href: '/dashboard/projects', label: 'Projecten', icon: 'M3 7V4h6l2 3h10v13H3z' },
+  {
+    href: '/dashboard/jobs',
+    label: 'Klussen',
+    icon: 'M9 5H4v16h16V5h-5 M9 3h6v4H9z M8 12h8 M8 16h5',
+  },
+  { href: '/dashboard/planning', label: 'Planning', icon: 'M3 5h18v16H3z M16 3v4 M8 3v4 M3 11h18' },
+  {
+    href: '/dashboard/quotes',
+    label: 'Offertes',
+    icon: 'M14 2H6v20h12V6z M14 2v5h5 M9 12h6 M9 16h6',
+  },
+  {
+    href: '/dashboard/invoices',
+    label: 'Facturen',
+    icon: 'M6 3h12v18l-3-2-3 2-3-2-3 2z M9 8h6 M9 12h6',
+  },
 ];
-
 const ADMIN_NAV_ITEMS = [
-  { href: '/dashboard/team', label: 'Team' },
-  { href: '/dashboard/settings', label: 'Instellingen' },
+  { href: '/dashboard/team', label: 'Team', icon: NAV_ITEMS[1].icon },
+  {
+    href: '/dashboard/settings',
+    label: 'Instellingen',
+    icon: 'M4 6h16 M4 12h16 M4 18h16 M8 3v6 M16 9v6 M10 15v6',
+  },
 ];
 
 export const Sidebar: React.FC = () => {
   const pathname = usePathname();
   const { user } = useAuth();
+  const [expanded, setExpanded] = useState(false);
   const navItems =
     user?.role === 'owner' || user?.role === 'admin'
       ? [...NAV_ITEMS, ...ADMIN_NAV_ITEMS]
       : NAV_ITEMS;
 
   return (
-    <nav style={styles.sidebar}>
-      <div style={styles.logo}>Glaszetter Snel</div>
-      <ul style={styles.list}>
+    <nav className="sapphire-sidebar" aria-label="Hoofdnavigatie">
+      <div className="sidebar-heading">
+        <Link
+          href="/dashboard"
+          aria-label="Glaszetter Snel: dashboard"
+          onClick={() => setExpanded(false)}
+        >
+          <BrandLogo />
+        </Link>
+        <button
+          type="button"
+          className="menu-toggle"
+          aria-expanded={expanded}
+          aria-controls="main-navigation"
+          onClick={() => setExpanded(!expanded)}
+        >
+          {expanded ? 'Sluiten' : 'Menu'}
+        </button>
+      </div>
+      <ul id="main-navigation" className={`sidebar-links${expanded ? ' is-expanded' : ''}`}>
         {navItems.map((item) => {
           const isActive =
             item.href === '/dashboard' ? pathname === item.href : pathname?.startsWith(item.href);
@@ -39,9 +82,27 @@ export const Sidebar: React.FC = () => {
             <li key={item.href}>
               <Link
                 href={item.href as Route}
-                style={{ ...styles.link, ...(isActive ? styles.linkActive : {}) }}
+                className={`sidebar-link${isActive ? ' is-active' : ''}`}
+                aria-current={isActive ? 'page' : undefined}
+                onClick={() => setExpanded(false)}
               >
-                {item.label}
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d={item.icon} />
+                </svg>
+                <span>{item.label}</span>
+                <span className="nav-chevron" aria-hidden="true">
+                  ›
+                </span>
               </Link>
             </li>
           );
@@ -49,39 +110,4 @@ export const Sidebar: React.FC = () => {
       </ul>
     </nav>
   );
-};
-
-const styles: Record<string, React.CSSProperties> = {
-  sidebar: {
-    width: 220,
-    minHeight: '100vh',
-    backgroundColor: 'var(--color-secondary)',
-    padding: 'var(--spacing-lg)',
-    flexShrink: 0,
-  },
-  logo: {
-    color: 'var(--color-background)',
-    fontSize: 18,
-    fontWeight: 700,
-    marginBottom: 'var(--spacing-xxl)',
-    paddingLeft: 'var(--spacing-sm)',
-  },
-  list: {
-    listStyle: 'none',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 'var(--spacing-xs)',
-  },
-  link: {
-    display: 'block',
-    padding: 'var(--spacing-sm) var(--spacing-md)',
-    borderRadius: 'var(--radius-md)',
-    color: '#EAF3FF',
-    fontSize: 14,
-    fontWeight: 500,
-  },
-  linkActive: {
-    backgroundColor: 'var(--color-primary)',
-    color: 'var(--color-background)',
-  },
 };

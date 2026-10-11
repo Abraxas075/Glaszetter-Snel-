@@ -226,7 +226,7 @@ export default function JobDetailPage() {
       )}
 
       {elements && elements.length > 0 && (
-        <table style={pageStyles.table}>
+        <div className="table-scroll"><table style={pageStyles.table}>
           <thead>
             <tr>
               <th style={pageStyles.th}>Code</th>
@@ -245,7 +245,7 @@ export default function JobDetailPage() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       )}
 
       <div style={dangerZoneStyle}>
@@ -295,8 +295,8 @@ const dangerButtonStyle: React.CSSProperties = {
   marginTop: 'var(--spacing-md)',
   padding: 'var(--spacing-sm) var(--spacing-lg)',
   borderRadius: 'var(--radius-md)',
-  backgroundColor: 'var(--color-error)',
-  color: 'var(--color-background)',
+  backgroundColor: 'var(--color-danger)',
+  color: 'var(--color-on-accent)',
   fontSize: 14,
   fontWeight: 600,
 };

@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { listCustomers } from '../../lib/customers';
 import { listProjects } from '../../lib/projects';
 import { listJobs } from '../../lib/jobs';
+import Link from 'next/link';
+import type { Route } from 'next';
 
 interface Counts {
   customers: number | null;
@@ -27,20 +29,20 @@ export default function DashboardOverviewPage() {
   }, []);
 
   const tiles = [
-    { label: 'Klanten', value: counts.customers },
-    { label: 'Projecten', value: counts.projects },
-    { label: 'Klussen', value: counts.jobs },
+    { href: '/dashboard/customers', label: 'Klanten', value: counts.customers },
+    { href: '/dashboard/projects', label: 'Projecten', value: counts.projects },
+    { href: '/dashboard/jobs', label: 'Klussen', value: counts.jobs },
   ];
 
   return (
     <div>
-      <h1 style={styles.title}>Dashboard</h1>
-      <div style={styles.grid}>
+      <h1 className="sapphire-title">Dashboard</h1>
+      <div className="overview-grid">
         {tiles.map((tile) => (
-          <div key={tile.label} style={styles.tile}>
+          <Link key={tile.label} href={tile.href as Route} className="glass-panel overview-tile">
             <p style={styles.tileValue}>{tile.value ?? '—'}</p>
             <p style={styles.tileLabel}>{tile.label}</p>
-          </div>
+          </Link>
         ))}
       </div>
     </div>
@@ -48,24 +50,6 @@ export default function DashboardOverviewPage() {
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  title: {
-    fontSize: 22,
-    fontWeight: 700,
-    color: 'var(--color-text-primary)',
-    marginBottom: 'var(--spacing-xl)',
-  },
-  grid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-    gap: 'var(--spacing-lg)',
-    maxWidth: 600,
-  },
-  tile: {
-    backgroundColor: 'var(--color-surface)',
-    border: '1px solid var(--color-border)',
-    borderRadius: 'var(--radius-md)',
-    padding: 'var(--spacing-xl)',
-  },
   tileValue: {
     fontSize: 32,
     fontWeight: 700,

@@ -111,7 +111,7 @@ export default function InvoicesPage() {
       )}
 
       {invoices && invoices.length > 0 && (
-        <table style={pageStyles.table}>
+        <div className="table-scroll"><table style={pageStyles.table}>
           <thead>
             <tr>
               <th style={pageStyles.th}>Nummer</th>
@@ -134,7 +134,7 @@ export default function InvoicesPage() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       )}
     </div>
   );

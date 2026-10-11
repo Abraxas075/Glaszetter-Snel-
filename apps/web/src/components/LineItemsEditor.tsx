@@ -162,7 +162,7 @@ export const LineItemsEditor: React.FC<LineItemsEditorProps> = ({
       {lines.length === 0 && <p style={pageStyles.empty}>Nog geen regels toegevoegd.</p>}
 
       {lines.length > 0 && (
-        <table style={pageStyles.table}>
+        <div className="table-scroll"><table style={pageStyles.table}>
           <thead>
             <tr>
               <th style={pageStyles.th}>Omschrijving</th>
@@ -187,7 +187,7 @@ export const LineItemsEditor: React.FC<LineItemsEditorProps> = ({
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       )}
 
       <div style={totalsStyle}>

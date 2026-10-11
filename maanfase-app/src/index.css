@@ -1,0 +1,86 @@
+@import 'tailwindcss';
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: ui-rounded, 'SF Pro Rounded', 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --color-app: #fcf8fc;
+  --color-card: #ffffff;
+  --color-soft: #f6eef8;
+  --color-ink: #2b2335;
+  --color-muted: #75697f;
+  --color-line: #eadff0;
+  --color-rose: #fbd9e6;
+  --color-lav: #e7defc;
+  --color-accent: #7c5ce0;
+  --color-accent-soft: #ece6fd;
+  --color-period: #3b7bef;
+  --color-period-soft: #d3e2fc;
+  --color-ovul: #1fa65f;
+  --color-ovul-soft: #c9f0da;
+  --color-fertile: #e2f6ea;
+  --color-moon: #e03a3a;
+  --color-moon-soft: #fbd0d0;
+  --color-fullmoon: #f2c200;
+  --color-newmoon: #1b1624;
+}
+
+:root.dark {
+  --color-app: #14101b;
+  --color-card: #1e1829;
+  --color-soft: #281f36;
+  --color-ink: #f2ecf9;
+  --color-muted: #a99dbb;
+  --color-line: #3a3050;
+  --color-rose: #4a2a3d;
+  --color-lav: #2f2752;
+  --color-accent: #a78bfa;
+  --color-accent-soft: #33295a;
+  --color-period: #6aa2ff;
+  --color-period-soft: #223a66;
+  --color-ovul: #3ccf84;
+  --color-ovul-soft: #1f4a35;
+  --color-fertile: #1d3a2d;
+  --color-moon: #ff6b6b;
+  --color-moon-soft: #5a2a33;
+  --color-newmoon: #f2ecf9;
+}
+
+html {
+  color-scheme: light;
+  -webkit-tap-highlight-color: transparent;
+}
+html.dark {
+  color-scheme: dark;
+}
+body {
+  margin: 0;
+  background: var(--color-app);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  overscroll-behavior-y: none;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+/* arcering voor verwachte (voorspelde) periodes */
+.hatch-green {
+  background-image: repeating-linear-gradient(45deg, var(--color-ovul-soft) 0 3px, var(--color-fertile) 3px 7px);
+}
+.hatch-blue {
+  background-image: repeating-linear-gradient(45deg, var(--color-period-soft) 0 3px, transparent 3px 7px);
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

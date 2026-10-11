@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#c4b5fd" />
+    <meta name="description" content="Menstruatie, ovulatie en maanfase-vruchtbaarheidskalender (methode Jonas). Alle gegevens blijven op je eigen apparaat." />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Maanfase" />
+    <title>Maanfase Cyclus</title>
+    <script>
+      // voorkomt een flits van de verkeerde modus bij het openen
+      try {
+        var s = JSON.parse(localStorage.getItem('maanfase.v1') || '{}');
+        var t = s.settings && s.settings.theme;
+        if (t === 'dark' || ((!t || t === 'auto') && matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark');
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

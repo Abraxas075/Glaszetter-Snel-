@@ -26,8 +26,15 @@
   --spacing-lg: 16px;
   --spacing-xl: 24px;
   --spacing-xxl: 32px;
-  --glass-reflection: linear-gradient(125deg, transparent 67%, rgba(180, 225, 240, 0.06) 67%, rgba(180, 225, 240, 0.06) 70%, transparent 70%);
-  --glass-frame: inset 0 0 0 2px var(--color-background), inset 0 0 0 3px var(--color-inner-border);
+  --glass-reflection:
+    linear-gradient(180deg, rgba(207, 246, 255, 0.12), transparent 38%),
+    linear-gradient(125deg, transparent 49%, rgba(207, 246, 255, 0.03) 49%, rgba(207, 246, 255, 0.16) 57%, rgba(207, 246, 255, 0.08) 61%, transparent 61%, transparent 65%, rgba(207, 246, 255, 0.12) 65%, rgba(207, 246, 255, 0.12) 66%, transparent 66%);
+  --glass-frame:
+    inset 0 1px 0 rgba(223, 251, 255, 0.55),
+    inset 0 -1px 0 rgba(141, 202, 199, 0.24),
+    inset 0 0 0 2px var(--color-background),
+    inset 0 0 0 3px var(--color-inner-border),
+    0 0 16px rgba(0, 160, 230, 0.08);
   --radius-sm: 0px;
   --radius-md: 0px;
   --radius-lg: 0px;
@@ -171,6 +178,7 @@ h1,
   padding: 14px;
   color: var(--color-text-primary);
   background: var(--color-surface);
+  background-image: var(--glass-reflection);
   border: 1px solid var(--color-inner-border);
   box-shadow: var(--glass-frame);
 }
@@ -181,9 +189,7 @@ h1,
 .sidebar-link:hover,
 .sidebar-link.is-active {
   border-color: var(--color-border);
-  box-shadow:
-    inset 0 0 0 2px var(--color-background),
-    inset 0 0 0 3px var(--color-inner-border);
+  box-shadow: var(--glass-frame);
   text-decoration: none;
 }
 .sidebar-link.is-active {

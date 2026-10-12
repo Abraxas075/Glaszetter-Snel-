@@ -10,13 +10,23 @@ const bootstrapOwner = async (): Promise<void> => {
     return;
   }
 
-  if (!emailValue || !password) {
-    throw new Error('Owner bootstrap requires both email and password.');
+  if (!emailValue) {
+    throw new Error('Owner bootstrap requires an email address.');
   }
 
   const email = emailValue.trim().toLowerCase();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || password.length < 16) {
-    throw new Error('Owner bootstrap requires a valid email and password of at least 16 characters.');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw new Error('Owner bootstrap requires a valid email address.');
+  }
+
+  if (!password) {
+    const result = await pool.query('SELECT id FROM users WHERE lower(email) = $1', [email]);
+    console.log(`Production account lookup: ${result.rowCount ? 'exists' : 'missing'}.`);
+    return;
+  }
+
+  if (password.length < 16) {
+    throw new Error('Owner bootstrap requires a password of at least 16 characters.');
   }
 
   const passwordHash = await hashPassword(password);

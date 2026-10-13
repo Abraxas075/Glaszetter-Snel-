@@ -6,7 +6,8 @@ import { AuthProvider } from '../src/contexts/AuthContext';
 import { BottomNav, sapphirePaths } from '../src/components/BottomNav';
 import { sapphire } from '../src/constants/sapphire';
 export default function RootLayout() {
-  const dark = sapphirePaths.includes(usePathname());
+  const path = usePathname();
+  const dark = sapphirePaths.includes(path) || path.startsWith('/spoed/');
   return (
     <SafeAreaProvider>
       <AuthProvider>

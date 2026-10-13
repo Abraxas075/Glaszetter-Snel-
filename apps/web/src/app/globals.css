@@ -594,3 +594,5 @@ tbody tr:hover {
 @media (max-width: 760px) { .urgent-heading .sapphire-button, .urgent-actions .sapphire-button { width: 100%; text-align: center; } .urgent-filter { flex: 1; min-width: 130px; } .urgent-card, .urgent-form { padding: 16px; } }
 
 .sidebar-link.urgent-frame:hover, .sidebar-link.urgent-frame.is-active, .overview-tile.urgent-frame:hover { border-color: #ec0016; box-shadow: inset 0 0 0 3px var(--color-background), inset 0 0 0 4px rgba(236,0,22,.5); }
+
+.urgent-form select, .urgent-card select { width: 100%; min-height: 44px; padding: 10px; margin-top: 6px; }

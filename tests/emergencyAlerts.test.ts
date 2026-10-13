@@ -15,12 +15,15 @@ let signToken: typeof import('../packages/api/src/services/authService')['signTo
 let server: ReturnType<ReturnType<typeof express>['listen']>;
 before(async () => {
  db = new PGlite();
- await db.exec('CREATE TABLE companies (id uuid PRIMARY KEY)');
+ await db.exec('CREATE TABLE companies (id uuid PRIMARY KEY); CREATE TABLE users (id uuid PRIMARY KEY,company_id uuid REFERENCES companies(id),name text,role text);');
  await db.query('INSERT INTO companies VALUES ($1),($2)', [owner, other]);
  const Builder = require('node-pg-migrate/dist/migrationBuilder').default;
  const builder = new Builder({}, undefined, false, { info(){}, warn(){}, error(){} });
  require('../packages/api/migrations/1700000000013_emergency-alerts.cjs').up(builder);
  await db.exec(builder.getSql());
+ const details = new Builder({}, undefined, false, { info(){}, warn(){}, error(){} });
+ require('../packages/api/migrations/1700000000014_emergency-details.cjs').up(details);await db.exec(details.getSql());
+ await db.query("INSERT INTO users VALUES ('00000000-0000-4000-8000-000000000003',$1,'Eigen medewerker','glaszetter'),('00000000-0000-4000-8000-000000000004',$2,'Andere medewerker','glaszetter'),('00000000-0000-4000-8000-000000000005',$1,'Extern','external')",[owner,other]);
  ({pool} = await import('../packages/api/src/db/pool'));
  mock.method(pool, 'query', (sql: string, params: unknown[]) => db.query(sql, params));
  ({signToken} = await import('../packages/api/src/services/authService'));
@@ -55,4 +58,42 @@ test('creation, reopening, status and revisions persist, with company isolation 
  const concurrent = await Promise.all([patch(done.revision,'open'),patch(done.revision,'in_progress')]);
  assert.deepEqual(concurrent.map(r=>r.status).sort(),[200,409]);
  assert.equal((await db.query('SELECT * FROM emergency_alerts')).rows.length,1);
+});
+
+test('assignment accepts only employees of the same company and is retained after reload',async()=>{
+ const ownMember='00000000-0000-4000-8000-000000000003';
+ const assignees=(await(await fetch(origin+'/assignees',{headers:headers()})).json()).data;
+ assert.deepEqual(assignees,[{id:ownMember,name:'Eigen medewerker'}]);
+ for(const assignedUserId of ['00000000-0000-4000-8000-000000000004','00000000-0000-4000-8000-000000000005']){
+  assert.equal((await fetch(origin,{method:'POST',headers:headers(),body:JSON.stringify({title:'Assignment',assignedUserId})})).status,400);
+ }
+ const id='00000000-0000-4000-8000-000000000011';
+ const create=()=>fetch(origin,{method:'POST',headers:headers(),body:JSON.stringify({title:'Assigned alert',id,assignedUserId:ownMember})});
+ const created=(await(await create()).json()).data;
+ assert.equal(created.assignedUserName,'Eigen medewerker');
+ assert.equal((await(await create()).json()).data.id,id);
+ assert.equal((await db.query('SELECT * FROM emergency_alerts WHERE id=$1',[id])).rows.length,1);
+ const changed=await fetch(origin+'/'+id,{method:'PATCH',headers:headers(),body:JSON.stringify({revision:created.revision,assignedUserId:null})});
+ assert.equal(changed.status,200);
+ const current=(await(await fetch(origin,{headers:headers()})).json()).data.find((a:any)=>a.id===id);
+ assert.equal(current.assignedUserId,null);assert.equal(current.status,'open');
+});
+test('photo retries retain one row and wrong-company or unsupported uploads never reach storage',async()=>{
+ const {createEmergencyPhotoService}=await import('../packages/api/src/services/emergencyPhotoService');
+ const objects=new Map<string,Buffer>();let uploads=0;
+ const storage={upload:async(k:string,b:Buffer)=>{uploads++;objects.set(k,b);},remove:async(k:string)=>{objects.delete(k);},read:async(k:string)=>{const b=objects.get(k);assert.ok(b);return b;}};
+ const service=createEmergencyPhotoService(db,storage);
+ const alertId='00000000-0000-4000-8000-000000000011',photoId='00000000-0000-4000-8000-000000000021';
+ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAIAAAAC64paAAAAHUlEQVR4nGMUtytlIBcwka1zVPOo5lHNo5qpohkAJQYA8j9QnyQAAAAASUVORK5CYII=','base64');
+ await assert.rejects(service.upload(other,alertId,photoId,'window.png',png),/niet gevonden/);
+ await assert.rejects(service.upload(owner,alertId,photoId,'bad.png',Buffer.from('not an image')),/JPG/);
+ assert.equal(uploads,0);
+ const saved=await service.upload(owner,alertId,photoId,'window.png',png);
+ assert.deepEqual(await service.upload(owner,alertId,photoId,'window.png',png),saved);assert.equal(uploads,1);
+ assert.equal((await service.list(owner,alertId)).length,1);
+ assert.deepEqual((await service.read(owner,alertId,photoId)).buffer,png);
+ await assert.rejects(service.read(other,alertId,photoId),/niet gevonden/);
+ const failed=createEmergencyPhotoService({query:async(sql,params)=>{if(sql.startsWith('INSERT INTO emergency_alert_photos'))throw Error('Database rejected');return db.query(sql,params);}},storage);
+ await assert.rejects(failed.upload(owner,alertId,'00000000-0000-4000-8000-000000000022','window.png',png),/Database rejected/);
+ assert.equal(objects.size,1);
 });

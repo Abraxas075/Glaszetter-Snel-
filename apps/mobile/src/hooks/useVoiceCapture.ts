@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ExpoSpeechRecognitionModule,
   useSpeechRecognitionEvent,
@@ -14,6 +14,7 @@ interface VoiceCaptureState {
 // simple state. Native module - requires a custom dev client build,
 // not available in Expo Go or the web bundler.
 export const useVoiceCapture = () => {
+  const mounted = useRef(true);
   const [state, setState] = useState<VoiceCaptureState>({
     isListening: false,
     transcript: '',
@@ -43,6 +44,7 @@ export const useVoiceCapture = () => {
 
   const start = useCallback(async () => {
     const permission = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+    if (!mounted.current) return;
     if (!permission.granted) {
       setState((prev) => ({ ...prev, error: 'Microfoon-toestemming geweigerd' }));
       return;
@@ -64,7 +66,10 @@ export const useVoiceCapture = () => {
     setState({ isListening: false, transcript: '', error: null });
   }, []);
 
-  useEffect(() => stop, [stop]);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; stop(); };
+  }, [stop]);
 
   return { ...state, start, stop, reset };
 };

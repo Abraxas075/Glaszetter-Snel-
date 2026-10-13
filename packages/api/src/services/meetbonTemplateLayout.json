@@ -1,0 +1,770 @@
+{
+  "pageWidth": 595.28,
+  "pageHeight": 841.89,
+  "texts": [
+    {
+      "text": "Naam:",
+      "x": 24,
+      "y": 30,
+      "w": 64,
+      "size": 9,
+      "bold": false
+    },
+    {
+      "text": "Straat:",
+      "x": 24,
+      "y": 47,
+      "w": 64,
+      "size": 9,
+      "bold": false
+    },
+    {
+      "text": "Postcode:",
+      "x": 24,
+      "y": 64,
+      "w": 64,
+      "size": 9,
+      "bold": false
+    },
+    {
+      "text": "Plaats:",
+      "x": 24,
+      "y": 81,
+      "w": 64,
+      "size": 9,
+      "bold": false
+    },
+    {
+      "text": "E-mail:",
+      "x": 24,
+      "y": 98,
+      "w": 64,
+      "size": 9,
+      "bold": false
+    },
+    {
+      "text": "Tel / GSM:",
+      "x": 24,
+      "y": 115,
+      "w": 64,
+      "size": 9,
+      "bold": false
+    },
+    {
+      "text": "Werk",
+      "x": 24,
+      "y": 153,
+      "w": 60,
+      "size": 9.2,
+      "bold": true
+    },
+    {
+      "text": "mm",
+      "x": 573,
+      "y": 156,
+      "w": 20,
+      "size": 7.5,
+      "bold": false
+    },
+    {
+      "text": "Soort kozijn",
+      "x": 24,
+      "y": 183,
+      "w": 130,
+      "size": 9.2,
+      "bold": true
+    },
+    {
+      "text": "Soort latten",
+      "x": 161,
+      "y": 183,
+      "w": 130,
+      "size": 9.2,
+      "bold": true
+    },
+    {
+      "text": "Latten en afdichting",
+      "x": 298,
+      "y": 183,
+      "w": 130,
+      "size": 9.2,
+      "bold": true
+    },
+    {
+      "text": "Verdieping en toegang",
+      "x": 435,
+      "y": 183,
+      "w": 130,
+      "size": 9.2,
+      "bold": true
+    },
+    {
+      "text": "Anders:",
+      "x": 24,
+      "y": 316,
+      "w": 38,
+      "size": 7.5,
+      "bold": false
+    },
+    {
+      "text": "Anders:",
+      "x": 161,
+      "y": 316,
+      "w": 38,
+      "size": 7.5,
+      "bold": false
+    },
+    {
+      "text": "Type latten:",
+      "x": 298,
+      "y": 288,
+      "w": 58,
+      "size": 7.5,
+      "bold": false
+    },
+    {
+      "text": "Kleur/type kit:",
+      "x": 298,
+      "y": 306,
+      "w": 58,
+      "size": 7.5,
+      "bold": false
+    },
+    {
+      "text": "Kleur band:",
+      "x": 298,
+      "y": 324,
+      "w": 58,
+      "size": 7.5,
+      "bold": false
+    },
+    {
+      "text": "Verdieping",
+      "x": 435,
+      "y": 297,
+      "w": 130,
+      "size": 7.5,
+      "bold": false
+    },
+    {
+      "text": "Klimmateriaal",
+      "x": 24,
+      "y": 356,
+      "w": 130,
+      "size": 9.2,
+      "bold": true
+    },
+    {
+      "text": "Bezetting",
+      "x": 161,
+      "y": 356,
+      "w": 130,
+      "size": 9.2,
+      "bold": true
+    },
+    {
+      "text": "Extra werkzaamheden",
+      "x": 298,
+      "y": 356,
+      "w": 130,
+      "size": 9.2,
+      "bold": true
+    },
+    {
+      "text": "Timmerwerk",
+      "x": 435,
+      "y": 356,
+      "w": 130,
+      "size": 9.2,
+      "bold": true
+    },
+    {
+      "text": "Werkhoogtes in mm",
+      "x": 24,
+      "y": 494,
+      "w": 130,
+      "size": 7.5,
+      "bold": false
+    },
+    {
+      "text": "Aantal mensen",
+      "x": 161,
+      "y": 378,
+      "w": 130,
+      "size": 7.5,
+      "bold": false
+    },
+    {
+      "text": "Verwachte tijdsduur",
+      "x": 161,
+      "y": 415,
+      "w": 130,
+      "size": 7.5,
+      "bold": false
+    },
+    {
+      "text": "Hoogwerker: bereik (mm)",
+      "x": 161,
+      "y": 448,
+      "w": 130,
+      "size": 7.5,
+      "bold": false
+    },
+    {
+      "text": "Kraanwagen: bereik (mm)",
+      "x": 161,
+      "y": 481,
+      "w": 130,
+      "size": 7.5,
+      "bold": false
+    },
+    {
+      "text": "Bij schilderwerk: foto’s maken",
+      "x": 298,
+      "y": 409,
+      "w": 130,
+      "size": 7.5,
+      "bold": false
+    },
+    {
+      "text": "Overige opmerkingen",
+      "x": 298,
+      "y": 425,
+      "w": 130,
+      "size": 7.5,
+      "bold": false
+    },
+    {
+      "text": "Datum:",
+      "x": 24,
+      "y": 802,
+      "w": 40,
+      "size": 9.2,
+      "bold": true
+    }
+  ],
+  "fields": [
+    {
+      "key": "name",
+      "label": "Naam:",
+      "x": 90,
+      "y": 27,
+      "w": 200,
+      "h": 16,
+      "multiline": false
+    },
+    {
+      "key": "street",
+      "label": "Straat:",
+      "x": 90,
+      "y": 44,
+      "w": 200,
+      "h": 16,
+      "multiline": false
+    },
+    {
+      "key": "postalCode",
+      "label": "Postcode:",
+      "x": 90,
+      "y": 61,
+      "w": 200,
+      "h": 16,
+      "multiline": false
+    },
+    {
+      "key": "city",
+      "label": "Plaats:",
+      "x": 90,
+      "y": 78,
+      "w": 200,
+      "h": 16,
+      "multiline": false
+    },
+    {
+      "key": "email",
+      "label": "E-mail:",
+      "x": 90,
+      "y": 95,
+      "w": 200,
+      "h": 16,
+      "multiline": false
+    },
+    {
+      "key": "phone",
+      "label": "Tel / GSM:",
+      "x": 90,
+      "y": 112,
+      "w": 200,
+      "h": 16,
+      "multiline": false
+    },
+    {
+      "key": "emergencySize",
+      "label": "Noodvoorziening (mm)",
+      "x": 385,
+      "y": 151,
+      "w": 184,
+      "h": 16,
+      "multiline": false
+    },
+    {
+      "key": "otherFrame",
+      "label": "Anders:",
+      "x": 62,
+      "y": 313,
+      "w": 92,
+      "h": 16,
+      "multiline": false
+    },
+    {
+      "key": "otherBead",
+      "label": "Anders:",
+      "x": 199,
+      "y": 313,
+      "w": 92,
+      "h": 16,
+      "multiline": false
+    },
+    {
+      "key": "replacementBead",
+      "label": "Type latten:",
+      "x": 356,
+      "y": 286,
+      "w": 74,
+      "h": 14,
+      "multiline": false
+    },
+    {
+      "key": "sealant",
+      "label": "Kleur/type kit:",
+      "x": 356,
+      "y": 304,
+      "w": 74,
+      "h": 14,
+      "multiline": false
+    },
+    {
+      "key": "tape",
+      "label": "Kleur band:",
+      "x": 356,
+      "y": 322,
+      "w": 74,
+      "h": 14,
+      "multiline": false
+    },
+    {
+      "key": "floor",
+      "label": "Verdieping",
+      "x": 435,
+      "y": 309,
+      "w": 130,
+      "h": 16,
+      "multiline": false
+    },
+    {
+      "key": "ownScaffoldHeight",
+      "label": "Eigen steiger: werkhoogte (mm)",
+      "x": 99,
+      "y": 430,
+      "w": 55,
+      "h": 14,
+      "multiline": false
+    },
+    {
+      "key": "rentalScaffoldHeight",
+      "label": "Huursteiger: werkhoogte (mm)",
+      "x": 99,
+      "y": 444,
+      "w": 55,
+      "h": 14,
+      "multiline": false
+    },
+    {
+      "key": "platformHeight",
+      "label": "Hoogwerker: werkhoogte (mm)",
+      "x": 99,
+      "y": 458,
+      "w": 55,
+      "h": 14,
+      "multiline": false
+    },
+    {
+      "key": "craneHeight",
+      "label": "Kraanwagen: werkhoogte (mm)",
+      "x": 99,
+      "y": 472,
+      "w": 55,
+      "h": 14,
+      "multiline": false
+    },
+    {
+      "key": "crew",
+      "label": "Aantal mensen",
+      "x": 161,
+      "y": 389,
+      "w": 130,
+      "h": 16,
+      "multiline": false
+    },
+    {
+      "key": "duration",
+      "label": "Verwachte tijdsduur",
+      "x": 161,
+      "y": 426,
+      "w": 130,
+      "h": 16,
+      "multiline": false
+    },
+    {
+      "key": "platformReach",
+      "label": "Hoogwerker: bereik (mm)",
+      "x": 161,
+      "y": 459,
+      "w": 130,
+      "h": 16,
+      "multiline": false
+    },
+    {
+      "key": "craneReach",
+      "label": "Kraanwagen: bereik (mm)",
+      "x": 161,
+      "y": 492,
+      "w": 130,
+      "h": 16,
+      "multiline": false
+    },
+    {
+      "key": "remarks",
+      "label": "Overige opmerkingen",
+      "x": 298,
+      "y": 438,
+      "w": 130,
+      "h": 68,
+      "multiline": true
+    },
+    {
+      "key": "date",
+      "label": "Datum:",
+      "x": 64,
+      "y": 799,
+      "w": 130,
+      "h": 16,
+      "multiline": false
+    }
+  ],
+  "checks": [
+    {
+      "key": "g1c0",
+      "label": "Oud werk",
+      "x": 64,
+      "y": 153,
+      "w": 130
+    },
+    {
+      "key": "g1c1",
+      "label": "Nieuw werk",
+      "x": 155,
+      "y": 153,
+      "w": 130
+    },
+    {
+      "key": "g1c2",
+      "label": "Noodvoorziening",
+      "x": 254,
+      "y": 153,
+      "w": 130
+    },
+    {
+      "key": "g2c0",
+      "label": "Kunststof",
+      "x": 24,
+      "y": 202,
+      "w": 130
+    },
+    {
+      "key": "g2c1",
+      "label": "Hout",
+      "x": 24,
+      "y": 216,
+      "w": 130
+    },
+    {
+      "key": "g2c2",
+      "label": "Aluminium",
+      "x": 24,
+      "y": 230,
+      "w": 130
+    },
+    {
+      "key": "g2c3",
+      "label": "Staal",
+      "x": 24,
+      "y": 244,
+      "w": 130
+    },
+    {
+      "key": "g2c4",
+      "label": "Dakruit",
+      "x": 24,
+      "y": 258,
+      "w": 130
+    },
+    {
+      "key": "g2c5",
+      "label": "Velux dakraam",
+      "x": 24,
+      "y": 272,
+      "w": 130
+    },
+    {
+      "key": "g2c6",
+      "label": "Balkonafscheiding",
+      "x": 24,
+      "y": 286,
+      "w": 130
+    },
+    {
+      "key": "g3c0",
+      "label": "Kunststof",
+      "x": 161,
+      "y": 202,
+      "w": 130
+    },
+    {
+      "key": "g3c1",
+      "label": "Hout",
+      "x": 161,
+      "y": 216,
+      "w": 130
+    },
+    {
+      "key": "g3c2",
+      "label": "Aluminium",
+      "x": 161,
+      "y": 230,
+      "w": 130
+    },
+    {
+      "key": "g3c3",
+      "label": "Staal",
+      "x": 161,
+      "y": 244,
+      "w": 130
+    },
+    {
+      "key": "g3c4",
+      "label": "Patentroede",
+      "x": 161,
+      "y": 258,
+      "w": 130
+    },
+    {
+      "key": "g3c5",
+      "label": "Vliesgevel",
+      "x": 161,
+      "y": 272,
+      "w": 130
+    },
+    {
+      "key": "g3c6",
+      "label": "Stopverf",
+      "x": 161,
+      "y": 286,
+      "w": 130
+    },
+    {
+      "key": "g4c0",
+      "label": "Latten binnen",
+      "x": 298,
+      "y": 202,
+      "w": 130
+    },
+    {
+      "key": "g4c1",
+      "label": "Latten buiten",
+      "x": 298,
+      "y": 216,
+      "w": 130
+    },
+    {
+      "key": "g4c2",
+      "label": "Latten geschroefd",
+      "x": 298,
+      "y": 230,
+      "w": 130
+    },
+    {
+      "key": "g4c3",
+      "label": "Freeswerk",
+      "x": 298,
+      "y": 244,
+      "w": 130
+    },
+    {
+      "key": "g4c4",
+      "label": "Latten vervangen",
+      "x": 298,
+      "y": 258,
+      "w": 130
+    },
+    {
+      "key": "g4c5",
+      "label": "Butyleen",
+      "x": 298,
+      "y": 272,
+      "w": 130
+    },
+    {
+      "key": "g5c0",
+      "label": "Begane grond",
+      "x": 435,
+      "y": 202,
+      "w": 130
+    },
+    {
+      "key": "g5c1",
+      "label": "1e verdieping",
+      "x": 435,
+      "y": 216,
+      "w": 130
+    },
+    {
+      "key": "g5c2",
+      "label": "Lift aanwezig",
+      "x": 435,
+      "y": 230,
+      "w": 130
+    },
+    {
+      "key": "g5c3",
+      "label": "Past in lift",
+      "x": 435,
+      "y": 244,
+      "w": 130
+    },
+    {
+      "key": "g5c4",
+      "label": "Kan over de trap",
+      "x": 435,
+      "y": 258,
+      "w": 130
+    },
+    {
+      "key": "g5c5",
+      "label": "Loopkar mee",
+      "x": 435,
+      "y": 272,
+      "w": 130
+    },
+    {
+      "key": "g6c0",
+      "label": "Klimmateriaal nodig",
+      "x": 24,
+      "y": 375,
+      "w": 130
+    },
+    {
+      "key": "g6c1",
+      "label": "Trap",
+      "x": 24,
+      "y": 389,
+      "w": 130
+    },
+    {
+      "key": "g6c2",
+      "label": "Ladder",
+      "x": 24,
+      "y": 403,
+      "w": 130
+    },
+    {
+      "key": "g6c3",
+      "label": "Kamersteiger",
+      "x": 24,
+      "y": 417,
+      "w": 130
+    },
+    {
+      "key": "g6c4",
+      "label": "Eigen steiger",
+      "x": 24,
+      "y": 431,
+      "w": 130
+    },
+    {
+      "key": "g6c5",
+      "label": "Huursteiger",
+      "x": 24,
+      "y": 445,
+      "w": 130
+    },
+    {
+      "key": "g6c6",
+      "label": "Hoogwerker",
+      "x": 24,
+      "y": 459,
+      "w": 130
+    },
+    {
+      "key": "g6c7",
+      "label": "Kraanwagen",
+      "x": 24,
+      "y": 473,
+      "w": 130
+    },
+    {
+      "key": "g8c0",
+      "label": "Bestickerd",
+      "x": 298,
+      "y": 375,
+      "w": 130
+    },
+    {
+      "key": "g8c1",
+      "label": "Schilderwerk",
+      "x": 298,
+      "y": 389,
+      "w": 130
+    },
+    {
+      "key": "g9c0",
+      "label": "Timmerman nodig",
+      "x": 435,
+      "y": 375,
+      "w": 130
+    },
+    {
+      "key": "g9c1",
+      "label": "Houten deuren",
+      "x": 435,
+      "y": 389,
+      "w": 130
+    },
+    {
+      "key": "g9c2",
+      "label": "Houten kozijnen",
+      "x": 435,
+      "y": 403,
+      "w": 130
+    },
+    {
+      "key": "g9c3",
+      "label": "Timmerherstel",
+      "x": 435,
+      "y": 417,
+      "w": 130
+    }
+  ],
+  "table": {
+    "x": 24,
+    "y": 520,
+    "widths": [
+      36,
+      178,
+      337
+    ],
+    "headerHeight": 22,
+    "rowHeight": 18,
+    "rows": 14
+  }
+}

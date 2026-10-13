@@ -4,6 +4,8 @@ import express from 'express';
 import type { Server } from 'node:http';
 import { PGlite } from '@electric-sql/pglite';
 import type { MeetbonPdfInput } from '../packages/api/src/services/meetbonPdfService';
+import { MEETBON_SECTIONS } from '../packages/shared/src/meetbon';
+import template from '../packages/api/src/services/meetbonTemplateLayout.json';
 
 let generateMeetbonPdf: typeof import('../packages/api/src/services/meetbonPdfService')['generateMeetbonPdf'];
 
@@ -45,7 +47,7 @@ test('PDF contains saved fields, choices, measurements, quantity-aware area and 
   const pdf = await generateMeetbonPdf(many);
   assert.equal(pdf.subarray(0, 5).toString(), '%PDF-');
   const text = await pdfText(pdf);
-  for (const value of ['Testklant', 'Oud werk: Ja', 'Nieuw werk: Nee', 'Breedte: 875 mm', 'Hoogte: 484 mm', '0,847', 'HR++', 'Regel 200:', 'Totaal: 400 ruiten - 169,4']) assert.ok(text.includes(value), value);
+  for (const value of ['Testklant', 'Oud werk', 'Nieuw werk', 'BREEDTE × HOOGTE (mm)', 'Breedte: 875 mm', 'Hoogte: 484 mm', 'HR++', 'Regel 200:', 'Totaal: 400 ruiten - 169,4', 'Vervolg meetbon']) assert.ok(text.includes(value), value);
   assert.ok((pdf.toString('latin1').match(/\/Type \/Page\b/g) ?? []).length > 2);
 });
 
@@ -66,11 +68,29 @@ test('empty meetbon exports and unavailable, unsupported and capped photos are e
 test('a supported PNG is embedded as an actual PDF image', async () => {
   const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAIAAAAC64paAAAAHUlEQVR4nGMUtytlIBcwka1zVPOo5lHNo5qpohkAJQYA8j9QnyQAAAAASUVORK5CYII=', 'base64');
   const photo = { storageKey: 'test/image', contentType: 'image/png', caption: 'Raamfoto', filename: 'raam.png', elementCode: 'R01' };
-  const pdf = await generateMeetbonPdf({ ...input, photos: [photo] }, async key => { assert.equal(key, photo.storageKey); return png; });
-  assert.ok(pdf.toString('latin1').includes('/Subtype /Image'));
+  let downloads = 0;
+  const pdf = await generateMeetbonPdf({ ...input, photos: [photo] }, async key => { downloads++; assert.equal(key, photo.storageKey); return png; });
+  const withoutPhotos = await generateMeetbonPdf(input);
+  const images = (buffer: Buffer) => (buffer.toString('latin1').match(/\/Subtype \/Image/g) ?? []).length;
+  assert.equal(downloads, 1);
+  assert.ok(images(pdf) > images(withoutPhotos), 'The photo is embedded in addition to the logo');
   const text = await pdfText(pdf);
   assert.ok(text.includes('Raamfoto'));
   assert.ok(!text.includes('kon niet worden ingesloten'));
+});
+
+test('template includes every stored field and choice, with fourteen pane rows', () => {
+  assert.deepEqual(template.fields.map(field => field.key).sort(), MEETBON_SECTIONS.flatMap(section => section.fields.map(field => field.key)).sort());
+  assert.deepEqual(template.checks.map(check => check.key).sort(), MEETBON_SECTIONS.flatMap(section => section.checks.map(check => check.key)).sort());
+  assert.equal(template.table.rows, 14);
+});
+
+test('a normal meetbon fits one template page with its logo, dimensions and total', async () => {
+  const pdf = await generateMeetbonPdf(input);
+  const text = await pdfText(pdf);
+  for (const value of ['Testklant', 'Laatste opmerking', '875 × 484', 'HR++ | Woonkamer', 'Totaal: 2 ruiten - 0,847', 'Geen foto’s opgeslagen']) assert.ok(text.includes(value), value);
+  assert.equal((pdf.toString('latin1').match(/\/Type \/Page\b/g) ?? []).length, 1);
+  assert.ok(pdf.toString('latin1').includes('/Subtype /Image'), 'Logo is embedded');
 });
 
 let db: PGlite;

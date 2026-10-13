@@ -1,6 +1,7 @@
 'use client';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiError, apiRequest } from '../../../lib/api';
+import { EmergencyPhotos } from './EmergencyPhotos';
 import { useAuth } from '../../../contexts/AuthContext';
 
 type Status = 'open' | 'in_progress' | 'resolved';
@@ -16,6 +17,9 @@ export default function EmergencyAlertsPage() {
   const [saving, setSaving] = useState(false);
   const [changing, setChanging] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const request = useRef<(typeof draft) & { id: string } | null>(null);
+  const [retrying, setRetrying] = useState(false);
+  const saveLock = useRef(false);
   const [draft, setDraft] = useState({ title: '', description: '', address: '', phone: '', assignedUserId: null as string | null });
   const load = useCallback(async () => {
     setLoading(true); setError('');
@@ -25,13 +29,18 @@ export default function EmergencyAlertsPage() {
   }, []);
   useEffect(() => { void load(); }, [load]);
   async function submit(event: React.FormEvent) {
-    event.preventDefault(); if (saving) return;
+    event.preventDefault(); if (saveLock.current) return;
+    saveLock.current = true;
     setSaving(true); setError('');
     try {
-      const saved = await apiRequest<Alert>('/emergency-alerts', { method: 'POST', body: JSON.stringify(draft) });
-      setAlerts(current => [saved, ...current]); setDraft({ title: '', description: '', address: '', phone: '', assignedUserId: null as string | null }); setShowForm(false); setFilter('open');
-    } catch (e) { setError(e instanceof ApiError ? e.message : 'Opslaan mislukt. Je invoer blijft staan.'); }
-    finally { setSaving(false); }
+      const saved = await apiRequest<Alert>('/emergency-alerts', { method: 'POST', body: JSON.stringify(request.current ?? (request.current = { ...draft, id: crypto.randomUUID() } )) });
+      request.current = null; setRetrying(false); setAlerts(current => [saved, ...current.filter(item => item.id !== saved.id)]); setDraft({ title: '', description: '', address: '', phone: '', assignedUserId: null as string | null }); setShowForm(false); setFilter('open');
+    } catch (e) {
+      if (e instanceof ApiError && e.status >= 400 && e.status < 500) { request.current = null; setRetrying(false); }
+      else setRetrying(true);
+      setError(e instanceof ApiError ? e.message : 'Opslaan niet bevestigd. Probeer opnieuw met dezelfde invoer.');
+    }
+    finally { saveLock.current = false; setSaving(false); }
   }
   async function change(alert: Alert, status: Status, assignedUserId?: string | null) {
     if (changing) return;
@@ -49,14 +58,15 @@ export default function EmergencyAlertsPage() {
       {(Object.keys(labels) as Status[]).map(status => <button key={status} type="button" className="glass-panel urgent-filter" aria-pressed={filter === status} onClick={() => setFilter(status)}>{labels[status]} <strong>{loading || error ? '—' : alerts.filter(a => a.status === status).length}</strong></button>)}
     </div>
     {showForm && <form className="glass-panel urgent-frame urgent-form" onSubmit={submit}>
-      <h2>Nieuwe spoedmelding</h2><fieldset disabled={saving}>
+      <h2>Nieuwe spoedmelding</h2><fieldset disabled={saving || retrying}>
         <label>Titel<input required maxLength={120} value={draft.title} onChange={e => setDraft({ ...draft, title: e.target.value })} /></label>
         <label>Omschrijving<textarea rows={3} maxLength={2000} value={draft.description} onChange={e => setDraft({ ...draft, description: e.target.value })} /></label>
         <label>Adres<input maxLength={300} value={draft.address} onChange={e => setDraft({ ...draft, address: e.target.value })} /></label>
         <label>Telefoonnummer<input type="tel" maxLength={60} value={draft.phone} onChange={e => setDraft({ ...draft, phone: e.target.value })} /></label>
         <label>Medewerker<select value={draft.assignedUserId||''} onChange={e=>setDraft({...draft,assignedUserId:e.target.value||null})}><option value="">Niet toegewezen</option>{members.map(m=><option key={m.id} value={m.id}>{m.name}</option>)}</select></label>
-        <div className="urgent-actions"><button className="sapphire-button urgent-button" type="submit">{saving ? 'Opslaan…' : 'Melding opslaan'}</button><button className="sapphire-button sapphire-button-secondary" type="button" onClick={() => setShowForm(false)}>Sluiten</button></div>
       </fieldset>
+      {retrying && <p>Opslaan is nog niet bevestigd. Je invoer blijft vaststaan zodat opnieuw proberen geen dubbele melding maakt.</p>}
+        <div className="urgent-actions"><button disabled={saving} className="sapphire-button urgent-button" type="submit">{saving ? 'Opslaan…' : retrying ? 'Opslaan opnieuw proberen' : 'Melding opslaan'}</button><button className="sapphire-button sapphire-button-secondary" type="button" disabled={saving} onClick={() => setShowForm(false)}>Sluiten</button></div>
     </form>}
     {error && <div role="alert" className="urgent-error">{error} <button type="button" className="sapphire-button sapphire-button-secondary" onClick={() => void load()}>Overzicht vernieuwen</button></div>}
     {loading && <p role="status">Spoedmeldingen laden…</p>}
@@ -67,6 +77,7 @@ export default function EmergencyAlertsPage() {
       {alert.description && <p className="urgent-description">{alert.description}</p>}
       {alert.address && <p>{alert.address}</p>}
       <label>Medewerker<select disabled={!!changing} value={alert.assignedUserId||''} onChange={e=>void change(alert,alert.status,e.target.value||null)}><option value="">Niet toegewezen</option>{members.map(m=><option key={m.id} value={m.id}>{m.name}</option>)}</select></label>
+      <EmergencyPhotos alertId={alert.id} />
       <div className="urgent-actions">
         {alert.phone && alert.phone.replace(/[^+0-9]/g, '') && <a className="sapphire-button sapphire-button-secondary" href={`tel:${alert.phone.replace(/[^+0-9]/g, '')}`}>Bellen</a>}
         {alert.address && <a className="sapphire-button sapphire-button-secondary" target="_blank" rel="noopener noreferrer" href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(alert.address)}`}>Route</a>}

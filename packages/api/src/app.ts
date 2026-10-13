@@ -2,6 +2,7 @@ import express, { Express, NextFunction, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import { requestBodies, bodyError } from './middleware/requestBodies';
+import { emergencyAlertsRouter } from './routes/emergencyAlerts';
 import { authRouter } from './routes/auth';
 import { customersRouter } from './routes/customers';
 import { projectsRouter } from './routes/projects';
@@ -34,6 +35,7 @@ app.get('/api/v1', (_req: Request, res: Response) => {
   res.json({ message: 'Glaszetter Snel API v1', phase: 'initialization' });
 });
 app.use('/api/v1/auth', authRouter);
+app.use('/api/v1/emergency-alerts', emergencyAlertsRouter);
 app.use('/api/v1/customers', customersRouter);
 app.use('/api/v1/projects', projectsRouter);
 app.use('/api/v1/jobs', jobsRouter);

@@ -44,6 +44,7 @@ export default function DashboardOverviewPage() {
             <p style={styles.tileLabel}>{tile.label}</p>
           </Link>
         ))}
+        <Link href={'/dashboard/spoed' as Route} className="glass-panel overview-tile urgent-frame"><p style={{ ...styles.tileValue, color: '#ff2339' }}>!</p><p style={styles.tileLabel}>Spoedmeldingen</p></Link>
       </div>
     </div>
   );

@@ -35,6 +35,7 @@ const NAV_ITEMS = [
     label: 'Facturen',
     icon: 'M6 3h12v18l-3-2-3 2-3-2-3 2z M9 8h6 M9 12h6',
   },
+  { href: '/dashboard/spoed', label: 'Spoedmeldingen', icon: 'M5 20h14 M7 20v-7a5 5 0 0 1 10 0v7 M12 2v3 M3 7l2 2 M21 7l-2 2' },
 ];
 const ADMIN_NAV_ITEMS = [
   { href: '/dashboard/team', label: 'Team', icon: NAV_ITEMS[1].icon },
@@ -82,7 +83,7 @@ export const Sidebar: React.FC = () => {
             <li key={item.href}>
               <Link
                 href={item.href as Route}
-                className={`sidebar-link${isActive ? ' is-active' : ''}`}
+                className={`sidebar-link${item.href === '/dashboard/spoed' ? ' urgent-frame' : ''}${isActive ? ' is-active' : ''}`}
                 aria-current={isActive ? 'page' : undefined}
                 onClick={() => setExpanded(false)}
               >

@@ -14,6 +14,7 @@ const tabs: { label: string; path: '/' | '/my-jobs' | '/chat' | '/profile'; icon
 export const sapphirePaths = [
   '/',
   '/my-jobs',
+  '/spoed',
   '/agenda',
   '/kaart',
   '/customers',

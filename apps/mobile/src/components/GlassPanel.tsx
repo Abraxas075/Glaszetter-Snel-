@@ -4,14 +4,16 @@ import { sapphire } from '../constants/sapphire';
 export function GlassPanel({
   children,
   style,
+  tone = 'default',
 }: {
   children: React.ReactNode;
+  tone?: 'default' | 'urgent';
   style?: StyleProp<ViewStyle>;
 }) {
   return (
-    <View style={[styles.panel, style]}>
+    <View style={[styles.panel, tone === 'urgent' && { borderColor: sapphire.red, borderWidth: 2 }, style]}>
       <View pointerEvents="none" accessible={false} style={styles.reflection} />
-      <View pointerEvents="none" accessible={false} style={styles.inner} />
+      <View pointerEvents="none" accessible={false} style={[styles.inner, tone === 'urgent' && {borderColor:sapphire.red}]} />
       {children}
     </View>
   );

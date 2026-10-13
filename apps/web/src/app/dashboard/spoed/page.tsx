@@ -1,11 +1,12 @@
 'use client';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ApiError, apiRequest } from '../../../lib/api';
+import { EmergencyForm } from './EmergencyForm';
 import { EmergencyPhotos } from './EmergencyPhotos';
 import { useAuth } from '../../../contexts/AuthContext';
 
 type Status = 'open' | 'in_progress' | 'resolved';
-interface Alert { id: string; revision: string; title: string; description: string; address: string; phone: string; status: Status; assignedUserId: string | null; assignedUserName: string | null; createdAt: string; updatedAt: string; }
+export interface Alert { id: string; revision: string; title: string; description: string; address: string; phone: string; status: Status; assignedUserId: string | null; assignedUserName: string | null; createdAt: string; updatedAt: string; }
 const labels: Record<Status, string> = { open: 'Nieuw', in_progress: 'In behandeling', resolved: 'Afgerond' };
 export default function EmergencyAlertsPage() {
   const { user } = useAuth();
@@ -14,13 +15,8 @@ export default function EmergencyAlertsPage() {
   const [filter, setFilter] = useState<Status>('open');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [saving, setSaving] = useState(false);
   const [changing, setChanging] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
-  const request = useRef<(typeof draft) & { id: string } | null>(null);
-  const [retrying, setRetrying] = useState(false);
-  const saveLock = useRef(false);
-  const [draft, setDraft] = useState({ title: '', description: '', address: '', phone: '', assignedUserId: null as string | null });
   const load = useCallback(async () => {
     setLoading(true); setError('');
     try { const [a,m]=await Promise.all([apiRequest<Alert[]>('/emergency-alerts'),apiRequest<{id:string;name:string}[]>('/emergency-alerts/assignees')]);setAlerts(a);setMembers(m); }
@@ -28,20 +24,6 @@ export default function EmergencyAlertsPage() {
     finally { setLoading(false); }
   }, []);
   useEffect(() => { void load(); }, [load]);
-  async function submit(event: React.FormEvent) {
-    event.preventDefault(); if (saveLock.current) return;
-    saveLock.current = true;
-    setSaving(true); setError('');
-    try {
-      const saved = await apiRequest<Alert>('/emergency-alerts', { method: 'POST', body: JSON.stringify(request.current ?? (request.current = { ...draft, id: crypto.randomUUID() } )) });
-      request.current = null; setRetrying(false); setAlerts(current => [saved, ...current.filter(item => item.id !== saved.id)]); setDraft({ title: '', description: '', address: '', phone: '', assignedUserId: null as string | null }); setShowForm(false); setFilter('open');
-    } catch (e) {
-      if (e instanceof ApiError && e.status >= 400 && e.status < 500) { request.current = null; setRetrying(false); }
-      else setRetrying(true);
-      setError(e instanceof ApiError ? e.message : 'Opslaan niet bevestigd. Probeer opnieuw met dezelfde invoer.');
-    }
-    finally { saveLock.current = false; setSaving(false); }
-  }
   async function change(alert: Alert, status: Status, assignedUserId?: string | null) {
     if (changing) return;
     setChanging(alert.id); setError('');
@@ -57,17 +39,10 @@ export default function EmergencyAlertsPage() {
     <div className="urgent-filters" role="group" aria-label="Statusfilter">
       {(Object.keys(labels) as Status[]).map(status => <button key={status} type="button" className="glass-panel urgent-filter" aria-pressed={filter === status} onClick={() => setFilter(status)}>{labels[status]} <strong>{loading || error ? '—' : alerts.filter(a => a.status === status).length}</strong></button>)}
     </div>
-    {showForm && <form className="glass-panel urgent-frame urgent-form" onSubmit={submit}>
-      <h2>Nieuwe spoedmelding</h2><fieldset disabled={saving || retrying}>
-        <label>Titel<input required maxLength={120} value={draft.title} onChange={e => setDraft({ ...draft, title: e.target.value })} /></label>
-        <label>Omschrijving<textarea rows={3} maxLength={2000} value={draft.description} onChange={e => setDraft({ ...draft, description: e.target.value })} /></label>
-        <label>Adres<input maxLength={300} value={draft.address} onChange={e => setDraft({ ...draft, address: e.target.value })} /></label>
-        <label>Telefoonnummer<input type="tel" maxLength={60} value={draft.phone} onChange={e => setDraft({ ...draft, phone: e.target.value })} /></label>
-        <label>Medewerker<select value={draft.assignedUserId||''} onChange={e=>setDraft({...draft,assignedUserId:e.target.value||null})}><option value="">Niet toegewezen</option>{members.map(m=><option key={m.id} value={m.id}>{m.name}</option>)}</select></label>
-      </fieldset>
-      {retrying && <p>Opslaan is nog niet bevestigd. Je invoer blijft vaststaan zodat opnieuw proberen geen dubbele melding maakt.</p>}
-        <div className="urgent-actions"><button disabled={saving} className="sapphire-button urgent-button" type="submit">{saving ? 'Opslaan…' : retrying ? 'Opslaan opnieuw proberen' : 'Melding opslaan'}</button><button className="sapphire-button sapphire-button-secondary" type="button" disabled={saving} onClick={() => setShowForm(false)}>Sluiten</button></div>
-    </form>}
+    {showForm && <EmergencyForm members={members} onClose={() => setShowForm(false)} onSaved={saved => {
+      setAlerts(current => [saved, ...current.filter(item => item.id !== saved.id)]);
+      setShowForm(false); setFilter('open');
+    }} />}
     {error && <div role="alert" className="urgent-error">{error} <button type="button" className="sapphire-button sapphire-button-secondary" onClick={() => void load()}>Overzicht vernieuwen</button></div>}
     {loading && <p role="status">Spoedmeldingen laden…</p>}
     {!loading && !error && alerts.filter(a => a.status === filter).length === 0 && <div className="glass-panel urgent-frame urgent-card"><h2>Geen meldingen met status ‘{labels[filter]}’</h2><p>Nieuwe spoedmeldingen verschijnen hier na het opslaan.</p></div>}

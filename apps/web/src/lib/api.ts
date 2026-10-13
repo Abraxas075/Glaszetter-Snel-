@@ -20,14 +20,15 @@ export const apiRequest = async <T>(
 ): Promise<T> => {
   const { authenticated = true, headers, ...rest } = options;
   const token = authenticated ? getToken() : null;
+  const requestHeaders = new Headers(headers);
+  if (!(rest.body instanceof FormData) && !requestHeaders.has('Content-Type')) {
+    requestHeaders.set('Content-Type', 'application/json');
+  }
+  if (token) requestHeaders.set('Authorization', `Bearer ${token}`);
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...rest,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...headers,
-    },
+    headers: requestHeaders,
   });
 
   if (response.status === 204) {

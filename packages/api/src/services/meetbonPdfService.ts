@@ -1,12 +1,13 @@
 import PDFDocument from 'pdfkit';
 import path from 'node:path';
-import { MEETBON_SECTIONS, type Company, type Job, type Meetbon, type Project } from '@glaszetter/shared';
+import { type Company, type Job, type Meetbon, type Project } from '@glaszetter/shared';
 import { pool } from '../db/pool';
 import { NotFoundError } from '../errors';
 import { getJob } from './jobService';
 import { getCompany } from './companyService';
 import { getProject } from './projectService';
 import { readFromBucket } from './s3Client';
+import { drawMeetbonTemplate } from './meetbonTemplate';
 
 export interface MeetbonPdfPhoto {
   storageKey: string;
@@ -51,7 +52,7 @@ export async function generateMeetbonPdf(
   input: MeetbonPdfInput,
   loadPhoto: (key: string) => Promise<Buffer> = readFromBucket
 ): Promise<Buffer> {
-  const doc = new PDFDocument({ size: 'A4', margins: { top: 88, bottom: 54, left: 44, right: 44 },
+  const doc = new PDFDocument({ size: 'A4', margins: { top: 88, bottom: 8, left: 44, right: 44 },
     info: { Title: `Meetbon - ${input.job.name}`, Author: input.company.name } });
   const chunks: Buffer[] = [];
   doc.registerFont('Regular', path.join(__dirname, '../../assets/fonts/DejaVuSans.ttf'));
@@ -66,6 +67,8 @@ export async function generateMeetbonPdf(
   const clean = (value: string) => value.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '');
   const header = () => {
     page++;
+    if (page === 1) { doc.x = 44; doc.y = 88; return; }
+    doc.page.margins.bottom = 54;
     doc.save().rect(0, 0, doc.page.width, 8).fill('#d52d36');
     doc.font('Bold').fontSize(18).fillColor('#173e75').text('DIGITALE MEETBON', 44, 28, { lineBreak: false });
     doc.font('Regular').fontSize(9).fillColor('#555').text(clean(input.company.name), 44, 53, { width, height: 15, ellipsis: true });
@@ -83,28 +86,17 @@ export async function generateMeetbonPdf(
     doc.moveDown(0.35);
   };
   try {
-    text(`Klus: ${input.job.name}\nProject: ${input.project.name}`);
-    text(`Opgeslagen: ${new Date(input.updatedAt).toLocaleString('nl-NL', { timeZone: 'Europe/Amsterdam' })} (Nederlandse tijd)`);
-    for (const section of MEETBON_SECTIONS) {
-      heading(section.title);
-      for (const field of section.fields) { space(30); text(`${field.label}: ${input.data.fields[field.key]?.trim() || '-'}`); }
-      if (section.checks.length) text(section.checks.map(check => `${check.label}: ${input.data.checks[check.key] ? 'Ja' : 'Nee'}`).join('   |   '));
+    const metadata = `Klus: ${input.job.name} | Project: ${input.project.name} | Opgeslagen: ${new Date(input.updatedAt).toLocaleString('nl-NL', { timeZone: 'Europe/Amsterdam' })} (Nederlandse tijd)`;
+    const overflow = drawMeetbonTemplate(doc, input.data, metadata);
+    if (overflow.length) {
+      doc.addPage(); heading('Vervolg meetbon');
+      text('Volledige invoer van gegevens die niet op de eerste pagina passen.');
+      for (const item of overflow) { heading(item.label); text(item.value); }
     }
-    heading('Ruiten');
-    const area = (n: number) => n.toLocaleString('nl-NL', { maximumFractionDigits: 3 });
-    if (!input.data.lines.length) text('Geen ruiten ingevuld.');
-    input.data.lines.forEach((line, index) => {
-      space(78);
-      doc.font('Bold').fontSize(11).fillColor('#173e75').text(`Ruit ${index + 1}`, 44, doc.y);
-      text(`Aantal: ${line.quantity}  |  Breedte: ${line.width} mm  |  Hoogte: ${line.height} mm`);
-      text(`Oppervlak inclusief aantal: ${area(line.quantity * line.width * line.height / 1e6)} m²`);
-      text(`Soort glas: ${line.glassType || '-'}\nOpmerking: ${line.notes || '-'}`);
-      doc.moveDown(0.5);
-    });
-    space(60);
-    text(`Totaal: ${input.data.lines.reduce((n, l) => n + l.quantity, 0)} ruiten - ${area(input.data.lines.reduce((n, l) => n + l.quantity * l.width * l.height / 1e6, 0))} m²`);
-    text('Deze bonregels staan los van ingemeten elementen en bestellingen.');
-    if (!input.photos.length) { heading('Foto’s bij de klus'); text('Geen foto’s opgeslagen bij deze klus.'); }
+    if (!input.photos.length) {
+      if (overflow.length) { heading('Foto’s bij de klus'); text('Geen foto’s opgeslagen bij deze klus.'); }
+      else doc.font('Regular').fontSize(6.5).fillColor('#222').text('Geen foto’s opgeslagen bij deze klus.', 350, 824, { width: 221, align: 'right', lineBreak: false });
+    }
     let embeddedBytes = 0;
     for (const [index, photo] of input.photos.entries()) {
       // Every photo remains listed; limit embedded image bytes and downloads on

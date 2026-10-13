@@ -13,7 +13,7 @@ export function drawMeetbonTemplate(doc: PDFKit.PDFDocument, data: Meetbon, meta
   const write = (value: string, x: number, y: number, w: number, size = 8, bold = false) => {
     doc.font(bold ? 'Bold' : 'Regular').fontSize(size).fillColor('#111').text(clean(value), x, y, { width: w, lineBreak: false });
   };
-  const cell = (label: string, value: string, x: number, y: number, w: number, h: number, size = 7.5) => {
+  const cell = (label: string, value: string, x: number, y: number, w: number, h: number, size = 9) => {
     const text = clean(value);
     doc.font('Regular').fontSize(size);
     const fits = doc.heightOfString(text, { width: w - 6, lineGap: 0 }) <= h - 3;
@@ -28,10 +28,10 @@ export function drawMeetbonTemplate(doc: PDFKit.PDFDocument, data: Meetbon, meta
     cell(f.label.replace(/:$/, ''), data.fields[f.key] || '', f.x, f.y, f.w, f.h);
   }
   for (const c of layout.checks) {
-    doc.save().strokeColor('#333').lineWidth(0.7).rect(c.x, c.y + 1, 8, 8).stroke();
-    if (data.checks[c.key]) doc.moveTo(c.x + 1.5, c.y + 5).lineTo(c.x + 3.5, c.y + 7.5).lineTo(c.x + 7, c.y + 2.5).stroke();
+    doc.save().strokeColor('#333').lineWidth(0.7).rect(c.x, c.y + 1, 10, 10).stroke();
+    if (data.checks[c.key]) doc.moveTo(c.x + 2, c.y + 6).lineTo(c.x + 4.5, c.y + 9).lineTo(c.x + 9, c.y + 2.5).stroke();
     doc.restore();
-    write(c.label, c.x + 12, c.y, c.w - 12, 7.2);
+    write(c.label, c.x + 14, c.y, c.w - 14, 8);
   }
   const { x, y, widths, headerHeight, rowHeight, rows } = layout.table;
   const totalWidth = widths.reduce((sum, w) => sum + w, 0);
@@ -52,14 +52,14 @@ export function drawMeetbonTemplate(doc: PDFKit.PDFDocument, data: Meetbon, meta
     }
     let cellX = x;
     const before = overflow.length;
-    values.forEach((v, j) => { cell(`Ruit ${i + 1}`, v, cellX, y + headerHeight + i * rowHeight, widths[j], rowHeight, 8); cellX += widths[j]; });
+    values.forEach((v, j) => { cell(`Ruit ${i + 1}`, v, cellX, y + headerHeight + i * rowHeight, widths[j], rowHeight, 9); cellX += widths[j]; });
     if (overflow.length > before) {
       overflow.splice(before);
       overflow.push({ label: `Ruit ${i + 1}`, value: `Aantal: ${line.quantity} | Breedte: ${line.width} mm | Hoogte: ${line.height} mm\nSoort glas: ${line.glassType || '-'}\nOpmerking: ${line.notes || '-'}` });
     }
   }
   const area = data.lines.reduce((sum, line) => sum + line.quantity * line.width * line.height / 1e6, 0).toLocaleString('nl-NL', { maximumFractionDigits: 3 });
-  write(`Totaal: ${data.lines.reduce((sum, line) => sum + line.quantity, 0)} ruiten - ${area} m²`, 211, 802, 360, 8, true);
+  write(`Totaal: ${data.lines.reduce((sum, line) => sum + line.quantity, 0)} ruiten - ${area} m²`, 211, 802, 360, 9, true);
   write(data.lines.length ? 'Bonregels staan los van ingemeten elementen en bestellingen.' : 'Geen ruiten ingevuld.', 24, 824, 547, 6.5);
   doc.x = 44; doc.y = 88;
   return overflow;

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Alert, Platform, ScrollView, Text, TextInput, View, Switch } from 'react-native';
-import { compareMeetbons, resolveMeetbonComparison, type MeetbonComparison, emptyMeetbon, isMeetbon, MEETBON_SECTIONS, type Meetbon } from '@glaszetter/shared';
+import { hasMeetbonChanges, compareMeetbons, resolveMeetbonComparison, type MeetbonComparison, emptyMeetbon, isMeetbon, MEETBON_SECTIONS, type Meetbon } from '@glaszetter/shared';
 import { ApiError, apiRequest } from '../api/client';
 import { shareMeetbonPdf } from '../api/meetbonPdf';
 import { useAuth } from '../contexts/AuthContext';
@@ -15,8 +15,13 @@ export function MeetbonScreen({ jobId }: { jobId: string }) {
   const [busy, setBusy] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [message, setMessage] = useState('');
+  const hasUnsavedChanges = loaded && hasMeetbonChanges(data, savedData);
+  function updateData(next: Meetbon) {
+    setMessage('');
+    setData(next);
+  }
   useEffect(() => {
-    let active = true; setLoaded(false); setComparison(null); setChoices({});
+    let active = true; setLoaded(false); setComparison(null); setChoices({}); setMessage('');
     apiRequest<Meetbon>(`/jobs/${jobId}/meetbon`, { token }).then(d => { if (active) { setData(d); setSavedData(d); setLoaded(true); } }).catch(() => { if (active) setMessage('Laden mislukt. Open de meetbon opnieuw.'); });
     return () => { active = false; };
   }, [jobId, token]);
@@ -38,7 +43,7 @@ export function MeetbonScreen({ jobId }: { jobId: string }) {
     if (!loaded || busy || !!comparison) return;
     if (!isMeetbon(data)) { setMessage('Controleer aantallen, maten en teksten (maximaal 2000 tekens per tekstveld).'); return; }
     setBusy(true); setMessage('');
-    try { const savedBon = await apiRequest<Meetbon>(`/jobs/${jobId}/meetbon`, { token, method: 'PUT', body: JSON.stringify(data) }); setSavedData(savedBon); setData(savedBon); setMessage('Meetbon opgeslagen.'); }
+    try { const savedBon = await apiRequest<Meetbon>(`/jobs/${jobId}/meetbon`, { token, method: 'PUT', body: JSON.stringify(data) }); setSavedData(savedBon); setData(savedBon); setMessage('Meetbon online opgeslagen bij deze klus.'); }
     catch (err) { if (await handleConflict(err)) return; setMessage(err instanceof ApiError && err.status === 413 ? 'De meetbon is te groot (maximaal 8 MiB). Je invoer blijft staan.' : 'Opslaan mislukt. Je invoer blijft staan.'); }
     finally { setBusy(false); }
   }
@@ -81,6 +86,8 @@ export function MeetbonScreen({ jobId }: { jobId: string }) {
   return <ScrollView contentContainerStyle={{ padding: 20, gap: 12 }}>
     <Text style={{ fontSize: 24, fontWeight: 'bold' }}>Digitale meetbon</Text>
     <Text>Alle glasmaten in mm. Ruiten in de bon staan los van ingemeten elementen.</Text>
+    <Text>Meetbon opslaan bewaart de bon online bij deze klus. Voor een bestand op je telefoon kies je Opslaan en PDF delen en sla je de PDF op via het deelmenu.</Text>
+    {loaded && <Text accessibilityLiveRegion="polite">{hasUnsavedChanges ? 'Je hebt wijzigingen die nog niet online zijn opgeslagen. Sla op voordat je dit scherm verlaat.' : savedData.revision ? 'De getoonde meetbon is online opgeslagen.' : 'Er is nog geen meetbon online opgeslagen bij deze klus.'}</Text>}
     <Text accessibilityLiveRegion="polite">{message || (!loaded ? 'Laden…' : '')}</Text>
     {comparison && <View style={{ padding: 12, borderWidth: 2, borderColor: '#1d4ed8', gap: 8 }}>
       <Text style={{ fontSize: 20 }}>Wijzigingen vergelijken</Text>
@@ -95,16 +102,16 @@ export function MeetbonScreen({ jobId }: { jobId: string }) {
     <View pointerEvents={!loaded || busy || !!comparison ? 'none' : 'auto'}>
       {MEETBON_SECTIONS.map(s => <View key={s.title} style={{ borderWidth: 1, borderColor: '#1d4ed8', padding: 12, marginBottom: 16, borderRadius: 8 }}>
         <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{s.title}</Text>
-        {s.fields.map(f => <View key={f.key}><Text>{f.label}</Text><TextInput accessibilityLabel={f.label} maxLength={2000} editable={loaded && !busy} style={{ borderBottomWidth: 1, padding: 10 }} value={data.fields[f.key] ?? ''} onChangeText={v => setData({ ...data, fields: { ...data.fields, [f.key]: v } })} /></View>)}
-        {s.checks.map(c => <View key={c.key} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}><Text>{c.label}</Text><Switch accessibilityLabel={c.label} disabled={!loaded || busy || !!comparison} value={data.checks[c.key] ?? false} onValueChange={v => setData({ ...data, checks: { ...data.checks, [c.key]: v } })} /></View>)}
+        {s.fields.map(f => <View key={f.key}><Text>{f.label}</Text><TextInput accessibilityLabel={f.label} maxLength={2000} editable={loaded && !busy} style={{ borderBottomWidth: 1, padding: 10 }} value={data.fields[f.key] ?? ''} onChangeText={v => updateData({ ...data, fields: { ...data.fields, [f.key]: v } })} /></View>)}
+        {s.checks.map(c => <View key={c.key} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}><Text>{c.label}</Text><Switch accessibilityLabel={c.label} disabled={!loaded || busy || !!comparison} value={data.checks[c.key] ?? false} onValueChange={v => updateData({ ...data, checks: { ...data.checks, [c.key]: v } })} /></View>)}
         {s.title === 'Extra werkzaamheden' && <Text>Bij schilderwerk: voeg foto’s toe bij de klus.</Text>}
       </View>)}
       <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Ruiten</Text>
       {data.lines.map((l, i) => <View key={i} style={{ padding: 12, borderWidth: 1, marginVertical: 8 }}>
-        {(['quantity', 'width', 'height', 'glassType', 'notes'] as const).map(k => <View key={k}><Text>{({ quantity: 'Aantal', width: 'Breedte (mm)', height: 'Hoogte (mm)', glassType: 'Soort glas', notes: 'Opmerking' })[k]}</Text><TextInput maxLength={k === 'glassType' || k === 'notes' ? 2000 : undefined} editable={loaded && !busy} style={{ padding: 10, borderBottomWidth: 1 }} keyboardType={k === 'glassType' || k === 'notes' ? 'default' : 'numeric'} value={String(l[k] || '')} onChangeText={v => setData({ ...data, lines: data.lines.map((x, j) => i === j ? { ...x, [k]: k === 'glassType' || k === 'notes' ? v : Number(v.replace(',', '.')) } : x) })} /></View>)}
-        <Button label="Ruit verwijderen" onPress={() => setData({ ...data, lines: data.lines.filter((_, j) => i !== j) })} />
+        {(['quantity', 'width', 'height', 'glassType', 'notes'] as const).map(k => <View key={k}><Text>{({ quantity: 'Aantal', width: 'Breedte (mm)', height: 'Hoogte (mm)', glassType: 'Soort glas', notes: 'Opmerking' })[k]}</Text><TextInput maxLength={k === 'glassType' || k === 'notes' ? 2000 : undefined} editable={loaded && !busy} style={{ padding: 10, borderBottomWidth: 1 }} keyboardType={k === 'glassType' || k === 'notes' ? 'default' : 'numeric'} value={String(l[k] || '')} onChangeText={v => updateData({ ...data, lines: data.lines.map((x, j) => i === j ? { ...x, [k]: k === 'glassType' || k === 'notes' ? v : Number(v.replace(',', '.')) } : x) })} /></View>)}
+        <Button label="Ruit verwijderen" onPress={() => updateData({ ...data, lines: data.lines.filter((_, j) => i !== j) })} />
       </View>)}
-      <Button label="＋ Ruit toevoegen" disabled={!loaded || busy || !!comparison || data.lines.length >= 200} onPress={() => setData({ ...data, lines: [...data.lines, { quantity: 1, width: 0, height: 0, glassType: '', notes: '' }] })} />
+      <Button label="＋ Ruit toevoegen" disabled={!loaded || busy || !!comparison || data.lines.length >= 200} onPress={() => updateData({ ...data, lines: [...data.lines, { quantity: 1, width: 0, height: 0, glassType: '', notes: '' }] })} />
       <Text>Totaal: {data.lines.reduce((n, l) => n + l.quantity * l.width * l.height / 1e6, 0).toLocaleString('nl-NL', { maximumFractionDigits: 3 })} m²</Text>
     </View>
     <Button label={busy && !exporting ? 'Opslaan…' : 'Meetbon opslaan'} disabled={!loaded || busy || !!comparison} onPress={save} />

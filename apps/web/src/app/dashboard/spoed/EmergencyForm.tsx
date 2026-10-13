@@ -2,6 +2,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { ApiError, apiRequest } from '../../../lib/api';
 import type { Alert } from './page';
+import { useDutchSpeech } from '../../../hooks/useDutchSpeech';
+import { appendSpeech } from '../../../lib/dutchSpeech';
 import { useUnsavedWarning } from '../../../hooks/useUnsavedWarning';
 
 type Draft = { title: string; description: string; address: string; phone: string; assignedUserId: string | null };
@@ -10,6 +12,7 @@ const empty = (): Draft => ({ title: '', description: '', address: '', phone: ''
 export function EmergencyForm({ members, onSaved, onClose }: {
   members: { id: string; name: string }[]; onSaved: (alert: Alert) => void; onClose: () => void;
 }) {
+  const voice = useDutchSpeech();
   const [draft, setDraft] = useState<Draft>(empty);
   const [photos, setPhotos] = useState<SelectedPhoto[]>([]);
   const [saving, setSaving] = useState(false);
@@ -20,7 +23,7 @@ export function EmergencyForm({ members, onSaved, onClose }: {
   const savedRef = useRef<Alert | null>(null);
   const lock = useRef(false);
   const urls = useRef(new Set<string>());
-  const dirty = saved ? photos.length > 0 : Object.values(draft).some(Boolean) || photos.length > 0;
+  const dirty = saved ? photos.length > 0 : Object.values(draft).some(Boolean) || photos.length > 0 || !!voice.transcript || voice.isListening;
   const warning = saved ? 'De melding is opgeslagen, maar er staan nog foto’s klaar voor upload. Wil je dit scherm verlaten?' : 'Je invoer en geselecteerde foto’s zijn nog niet opgeslagen. Wil je dit scherm verlaten?';
   const allowLeave = useUnsavedWarning(dirty, warning, saving);
   useEffect(() => { const activeUrls = urls.current; return () => { activeUrls.forEach(url => URL.revokeObjectURL(url)); }; }, []);
@@ -41,7 +44,7 @@ export function EmergencyForm({ members, onSaved, onClose }: {
     setError(rejected ? 'Kies maximaal 10 JPG- of PNG-foto’s van maximaal 15 MiB per foto.' : '');
   }
   async function submit(event: React.FormEvent) {
-    event.preventDefault(); if (lock.current) return;
+    event.preventDefault(); if (lock.current || voice.isListening || voice.transcript) return;
     if (!draft.title.trim()) { setError('Vul een titel in.'); return; }
     lock.current = true; setSaving(true); setError('');
     try {
@@ -80,6 +83,22 @@ export function EmergencyForm({ members, onSaved, onClose }: {
       <label>Telefoonnummer<input type="tel" maxLength={60} value={draft.phone} onChange={e => setDraft({ ...draft, phone: e.target.value })} /></label>
       <label>Medewerker<select value={draft.assignedUserId || ''} onChange={e => setDraft({ ...draft, assignedUserId: e.target.value || null })}><option value="">Niet toegewezen</option>{members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}</select></label>
     </fieldset>
+    {!saved && !retrying && <div>
+      <button className="sapphire-button sapphire-button-secondary" type="button" disabled={!voice.supported || saving || (!voice.isListening && !!voice.transcript)} onClick={() => voice.isListening ? voice.stop() : voice.start()}>{voice.isListening ? 'Stop spraakinvoer' : 'Omschrijving inspreken'}</button>
+      {!voice.supported && <p>Deze browser ondersteunt geen spraakinvoer. Je kunt de omschrijving typen.</p>}
+      {voice.supported && <p>Spraak wordt via de spraakdienst van je browser herkend. Controleer de tekst voordat je die toevoegt.</p>}
+      {voice.isListening && <p role="status">Luisteren in het Nederlands…</p>}
+      {voice.error && <p role="alert">{voice.error}</p>}
+      {voice.transcript && <div>
+        <p style={{ whiteSpace: 'pre-wrap' }}>{voice.transcript}</p>
+        <button type="button" className="sapphire-button urgent-button" disabled={voice.isListening || saving} onClick={() => {
+          const combined = appendSpeech(draft.description, voice.transcript);
+          if (combined === null) { setError('De omschrijving mag maximaal 2000 tekens bevatten. Kort je omschrijving eerst in.'); return; }
+          setDraft(current => ({ ...current, description: combined })); voice.reset(); setError('');
+        }}>Spraak aan omschrijving toevoegen</button>
+        <button type="button" className="sapphire-button sapphire-button-secondary" disabled={voice.isListening || saving} onClick={() => voice.reset()}>Herkende tekst wissen</button>
+      </div>}
+    </div>}
     {retrying && <p>Opslaan is nog niet bevestigd. Je invoer blijft vaststaan zodat opnieuw proberen geen dubbele melding maakt.</p>}
     <fieldset disabled={saving || retrying}>
       <legend>Foto’s ({photos.length}/10)</legend>
@@ -94,7 +113,7 @@ export function EmergencyForm({ members, onSaved, onClose }: {
     </fieldset>
     {error && <p role="alert" className="urgent-error">{error}</p>}
     <div className="urgent-actions">
-      <button disabled={saving} className="sapphire-button urgent-button" type="submit">{saving ? 'Opslaan…' : saved ? 'Foto’s opnieuw uploaden' : retrying ? 'Opslaan opnieuw proberen' : 'Melding opslaan'}</button>
+      <button disabled={saving || voice.isListening || !!voice.transcript} className="sapphire-button urgent-button" type="submit">{saving ? 'Opslaan…' : saved ? 'Foto’s opnieuw uploaden' : retrying ? 'Opslaan opnieuw proberen' : 'Melding opslaan'}</button>
       <button disabled={saving} className="sapphire-button sapphire-button-secondary" type="button" onClick={close}>Sluiten</button>
     </div>
   </form>;

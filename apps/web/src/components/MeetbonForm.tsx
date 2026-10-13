@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { compareMeetbons, resolveMeetbonComparison, type MeetbonComparison, emptyMeetbon, isMeetbon, MEETBON_SECTIONS, type Meetbon } from '@glaszetter/shared';
+import { hasMeetbonChanges, compareMeetbons, resolveMeetbonComparison, type MeetbonComparison, emptyMeetbon, isMeetbon, MEETBON_SECTIONS, type Meetbon } from '@glaszetter/shared';
 import { ApiError, apiRequest, fetchBlob } from '../lib/api';
 import { formStyles, pageStyles } from '../styles/shared';
 export function MeetbonForm({ jobId }: { jobId: string }) {
@@ -16,6 +16,11 @@ export function MeetbonForm({ jobId }: { jobId: string }) {
   const [busy, setBusy] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [message, setMessage] = useState('');
+  const hasUnsavedChanges = loaded && hasMeetbonChanges(data, savedData);
+  function updateData(next: Meetbon) {
+    setMessage('');
+    setData(next);
+  }
   useEffect(() => {
     let active = true;
     setLoaded(false); setComparison(null); setChoices({}); setMessage('');
@@ -41,7 +46,7 @@ export function MeetbonForm({ jobId }: { jobId: string }) {
     e.preventDefault(); if (!loaded || busy || !!comparison) return;
     if (!isMeetbon(data)) { setMessage('Controleer aantallen, maten en teksten (maximaal 2000 tekens per tekstveld).'); return; }
     setBusy(true); setMessage('');
-    try { const savedBon = await apiRequest<Meetbon>(`/jobs/${jobId}/meetbon`, { method: 'PUT', body: JSON.stringify(data) }); setSavedData(savedBon); setData(savedBon); setMessage('Meetbon opgeslagen.'); }
+    try { const savedBon = await apiRequest<Meetbon>(`/jobs/${jobId}/meetbon`, { method: 'PUT', body: JSON.stringify(data) }); setSavedData(savedBon); setData(savedBon); setMessage('Meetbon online opgeslagen bij deze klus.'); }
     catch (err) { if (await handleConflict(err)) return; setMessage(err instanceof ApiError && err.status === 413 ? 'De meetbon is te groot (maximaal 8 MiB). Je invoer blijft staan.' : 'Opslaan mislukt. Je invoer staat nog in het formulier.'); }
     finally { setBusy(false); }
   };
@@ -86,6 +91,8 @@ export function MeetbonForm({ jobId }: { jobId: string }) {
     <h2 style={pageStyles.title}>Digitale meetbon</h2>
     <a href="/templates/Meetbon_Glaszettersnel_digitaal.xlsx" download>Originele Excel-meetbon downloaden</a>
     <p className="meetbon-description">Gebaseerd op je meetbon. Alle glasmaten zijn in mm. Opgeslagen ruiten in deze bon staan los van de ingemeten elementen.</p>
+    <p className="meetbon-description">Meetbon opslaan bewaart de bon online bij deze klus. Voor een bestand op je toestel kies je Opslaan en PDF downloaden.</p>
+    {loaded && <p role="status">{hasUnsavedChanges ? 'Je hebt wijzigingen die nog niet online zijn opgeslagen. Sla op voordat je deze pagina verlaat.' : savedData.revision ? 'De getoonde meetbon is online opgeslagen.' : 'Er is nog geen meetbon online opgeslagen bij deze klus.'}</p>}
     {comparison && <aside className="glass-panel meetbon-comparison" aria-label="Wijzigingen vergelijken">
       <h3>Wijzigingen vergelijken</h3><p>Niet-overlappende wijzigingen worden samengevoegd. Bij gelijktijdig gewijzigde ruiten kies je de volledige lijst.</p>
       {comparison.conflicts.map(c => <fieldset className="glass-panel meetbon-panel" key={c.key}><legend>{c.label}</legend>
@@ -114,9 +121,9 @@ export function MeetbonForm({ jobId }: { jobId: string }) {
           <fieldset className="meetbon-disclosure-content">
           <legend className="sr-only">{section.title}</legend>
           <div className="meetbon-fields">
-            {section.fields.map(f => <label key={f.key}>{f.label}<input maxLength={2000} style={formStyles.input} value={data.fields[f.key] ?? ''} onChange={e => setData({ ...data, fields: { ...data.fields, [f.key]: e.target.value } })} /></label>)}
+            {section.fields.map(f => <label key={f.key}>{f.label}<input maxLength={2000} style={formStyles.input} value={data.fields[f.key] ?? ''} onChange={e => updateData({ ...data, fields: { ...data.fields, [f.key]: e.target.value } })} /></label>)}
           </div>
-          {section.checks.map(c => <label key={c.key} className="meetbon-check"><input type="checkbox" checked={data.checks[c.key] ?? false} onChange={e => setData({ ...data, checks: { ...data.checks, [c.key]: e.target.checked } })} />{c.label}</label>)}
+          {section.checks.map(c => <label key={c.key} className="meetbon-check"><input type="checkbox" checked={data.checks[c.key] ?? false} onChange={e => updateData({ ...data, checks: { ...data.checks, [c.key]: e.target.checked } })} />{c.label}</label>)}
           {section.title === 'Extra werkzaamheden' && <p>Bij schilderwerk: voeg foto’s toe bij de klus.</p>}
           </fieldset>
         </details>})}
@@ -128,11 +135,11 @@ export function MeetbonForm({ jobId }: { jobId: string }) {
         {data.lines.map((line, index) => <fieldset key={index} className="glass-panel meetbon-panel">
           <legend>Ruit {index + 1}</legend>
           <div className="meetbon-fields meetbon-line-fields">
-            {(['quantity', 'width', 'height', 'glassType', 'notes'] as const).map(key => <label key={key}>{({ quantity: 'Aantal', width: 'Breedte (mm)', height: 'Hoogte (mm)', glassType: 'Soort glas', notes: 'Opmerking' })[key]}<input maxLength={key === 'glassType' || key === 'notes' ? 2000 : undefined} style={formStyles.input} type={key === 'glassType' || key === 'notes' ? 'text' : 'number'} min="1" step={key === 'quantity' ? '1' : 'any'} required={key !== 'glassType' && key !== 'notes'} value={line[key] || ''} onChange={e => setData({ ...data, lines: data.lines.map((l, i) => i === index ? { ...l, [key]: key === 'glassType' || key === 'notes' ? e.target.value : Number(e.target.value) } : l) })} /></label>)}
+            {(['quantity', 'width', 'height', 'glassType', 'notes'] as const).map(key => <label key={key}>{({ quantity: 'Aantal', width: 'Breedte (mm)', height: 'Hoogte (mm)', glassType: 'Soort glas', notes: 'Opmerking' })[key]}<input maxLength={key === 'glassType' || key === 'notes' ? 2000 : undefined} style={formStyles.input} type={key === 'glassType' || key === 'notes' ? 'text' : 'number'} min="1" step={key === 'quantity' ? '1' : 'any'} required={key !== 'glassType' && key !== 'notes'} value={line[key] || ''} onChange={e => updateData({ ...data, lines: data.lines.map((l, i) => i === index ? { ...l, [key]: key === 'glassType' || key === 'notes' ? e.target.value : Number(e.target.value) } : l) })} /></label>)}
           </div>
-          <button className="sapphire-button sapphire-button-secondary" type="button" onClick={() => setData({ ...data, lines: data.lines.filter((_, i) => i !== index) })}>Ruit verwijderen</button>
+          <button className="sapphire-button sapphire-button-secondary" type="button" onClick={() => updateData({ ...data, lines: data.lines.filter((_, i) => i !== index) })}>Ruit verwijderen</button>
         </fieldset>)}
-        <button className="sapphire-button sapphire-button-secondary meetbon-add-line" type="button" disabled={data.lines.length >= 200} onClick={() => setData({ ...data, lines: [...data.lines, { quantity: 1, width: 0, height: 0, glassType: '', notes: '' }] })}>＋ Ruit toevoegen</button>
+        <button className="sapphire-button sapphire-button-secondary meetbon-add-line" type="button" disabled={data.lines.length >= 200} onClick={() => updateData({ ...data, lines: [...data.lines, { quantity: 1, width: 0, height: 0, glassType: '', notes: '' }] })}>＋ Ruit toevoegen</button>
         <p>Totaal: {data.lines.reduce((n, l) => n + l.quantity * l.width * l.height / 1e6, 0).toLocaleString('nl-NL', { maximumFractionDigits: 3 })} m²</p>
           </fieldset>
         </details>

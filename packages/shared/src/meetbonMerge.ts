@@ -2,6 +2,13 @@ import { MEETBON_SECTIONS, type Meetbon } from './meetbon';
 export interface MeetbonConflict { key: string; label: string; own: unknown; latest: unknown; }
 export interface MeetbonComparison { merged: Meetbon; latest: Meetbon; conflicts: MeetbonConflict[]; }
 const canonical = (v: unknown): string => JSON.stringify(v, (_key, value) => value && typeof value === 'object' && !Array.isArray(value) ? Object.fromEntries(Object.keys(value).sort().map(k => [k, value[k]])) : value);
+export function hasMeetbonChanges(own: Meetbon, saved: Meetbon): boolean {
+  for (const section of MEETBON_SECTIONS) {
+    if (section.fields.some(field => (own.fields[field.key] ?? '') !== (saved.fields[field.key] ?? ''))) return true;
+    if (section.checks.some(check => (own.checks[check.key] ?? false) !== (saved.checks[check.key] ?? false))) return true;
+  }
+  return canonical(own.lines) !== canonical(saved.lines);
+}
 export function compareMeetbons(base: Meetbon, own: Meetbon, latest: Meetbon): MeetbonComparison {
   const conflicts: MeetbonConflict[] = [];
   const choose = (key: string, label: string, b: unknown, o: unknown, n: unknown) => {

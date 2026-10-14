@@ -1,5 +1,10 @@
 module.exports = ({ config }) => {
   const preview = process.env.APK_PREVIEW === '1';
+  const production = process.env.APK_PRODUCTION === '1';
+  if (preview && production) throw new Error('Kies één APK-omgeving.');
+  if (production && process.env.EXPO_PUBLIC_API_URL !== 'https://glaszetter-api.onrender.com/api/v1') {
+    throw new Error('Een productie-APK moet dezelfde HTTPS-API als de website gebruiken.');
+  }
   if (preview) {
     let api;
     try { api = new URL(process.env.EXPO_PUBLIC_API_URL); } catch {

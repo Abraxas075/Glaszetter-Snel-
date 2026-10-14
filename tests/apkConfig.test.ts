@@ -23,3 +23,27 @@ test('test APK requires an explicit separate HTTPS API and keeps its own package
     if (oldApi === undefined) delete process.env.EXPO_PUBLIC_API_URL; else process.env.EXPO_PUBLIC_API_URL = oldApi;
   }
 });
+
+test('production APK enforces the website API, normal app identity and its update version', () => {
+  const previous = { ...process.env };
+  try {
+    process.env.APK_PRODUCTION = '1';
+    process.env.APK_PREVIEW = '0';
+    for (const api of ['', 'https://glaszetter-api-test.onrender.com/api/v1', 'http://glaszetter-api.onrender.com/api/v1', 'https://glaszetter-api.onrender.com/api/v1?token=x']) {
+      process.env.EXPO_PUBLIC_API_URL = api;
+      assert.throws(() => configure({config: base}));
+    }
+    process.env.EXPO_PUBLIC_API_URL = 'https://glaszetter-api.onrender.com/api/v1';
+    process.env.ANDROID_VERSION_CODE = '100001';
+    const app = configure({config: base});
+    assert.equal(app.name, 'Glaszetter Snel');
+    assert.equal(app.android.package, 'com.abraxas.glaszettersnel');
+    assert.equal(app.android.versionCode, 100001);
+    process.env.APK_PREVIEW = '1';
+    assert.throws(() => configure({config: base}));
+  } finally {
+    for (const key of ['APK_PRODUCTION', 'APK_PREVIEW', 'EXPO_PUBLIC_API_URL', 'ANDROID_VERSION_CODE']) {
+      if (previous[key] === undefined) delete process.env[key]; else process.env[key] = previous[key];
+    }
+  }
+});

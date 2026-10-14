@@ -17,7 +17,7 @@ export async function shareOrderPdf(jobId: string, token: string): Promise<void>
   const directory = `${FileSystem.cacheDirectory}bestelbon-pdfs/`;
   await FileSystem.makeDirectoryAsync(directory, { intermediates: true });
   const oldFiles = await FileSystem.readDirectoryAsync(directory);
-  await Promise.all(oldFiles.filter(name => /^Bestelbon-\d+\.pdf$/.test(name) && Number(name.slice(9, -4)) < Date.now() - 86400000).map(name => FileSystem.deleteAsync(`${directory}${name}`, { idempotent: true }).catch(() => {})));
+  await Promise.all(oldFiles.filter(name => /^Bestelbon-\d+\.pdf$/.test(name) && Number(name.slice(10, -4)) < Date.now() - 86400000).map(name => FileSystem.deleteAsync(`${directory}${name}`, { idempotent: true }).catch(() => {})));
   const uri = `${directory}Bestelbon-${Date.now()}.pdf`; let shared = false;
   try {
     const result = await FileSystem.downloadAsync(url, uri, { headers: { Authorization: `Bearer ${token}` } });

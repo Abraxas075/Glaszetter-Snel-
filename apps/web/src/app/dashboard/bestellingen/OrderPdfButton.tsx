@@ -4,7 +4,7 @@ import { ApiError, fetchBlob } from '../../../lib/api';
 export function OrderPdfButton({ jobId, canExport }: { jobId: string; canExport: () => boolean }) {
   const [busy, setBusy] = useState(false), [message, setMessage] = useState('');
   async function download() {
-    if (!canExport()) { setMessage('Sla eerst je wijzigingen aan leverancier en leverdatum op. De bestelbon gebruikt de opgeslagen gegevens.'); return; }
+    if (!canExport()) { setMessage('Sla eerst je bestelgegevens op. De bestelbon gebruikt de opgeslagen gegevens.'); return; }
     setBusy(true); setMessage('');
     try {
       const blob = await fetchBlob(`/jobs/${encodeURIComponent(jobId)}/order/pdf`);

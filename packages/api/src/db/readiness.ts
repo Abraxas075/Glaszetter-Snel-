@@ -11,7 +11,7 @@ export async function assertDatabaseReady(db: Queryable): Promise<void> {
   const required: Record<string, string> = {
     'jobs.id': 'uuid', 'jobs.company_id': 'uuid', 'jobs.project_id': 'uuid',
     'jobs.team_id': 'uuid', 'jobs.scheduled_date': 'date',
-    'jobs.supplier_name': 'text', 'jobs.delivery_date': 'date',
+    'jobs.order_number': 'text', 'jobs.supplier_name': 'text', 'jobs.delivery_date': 'date',
     'meetbons.revision': 'uuid', 'meetbons.job_id': 'uuid', 'meetbons.data': 'jsonb', 'meetbons.updated_at': 'timestamptz',
     'elements.job_id': 'uuid', 'measurements.job_id': 'uuid', 'photos.job_id': 'uuid',
     'quotes.job_id': 'uuid', 'invoices.job_id': 'uuid',

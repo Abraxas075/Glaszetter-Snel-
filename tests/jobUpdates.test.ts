@@ -54,6 +54,9 @@ before(async () => {
   const builder = new Builder({}, undefined, false, { info(){}, warn(){}, error(){} });
   migration.up(builder);
   await db.exec(builder.getSql());
+  const numbers = new Builder({}, undefined, false, { info(){}, warn(){}, error(){} });
+  require('../packages/api/migrations/1700000000017_order-number.cjs').up(numbers);
+  await db.exec(numbers.getSql());
   await db.query('INSERT INTO projects VALUES ($1, $2)', [projectId, companyId]);
   await db.query('INSERT INTO teams VALUES ($1, $2), ($3, $4), ($5, $2)', [
     teamId,
@@ -364,10 +367,14 @@ test('HTTP order details save, reload, validation, authentication and company is
   const token = signToken({ companyId, userId: companyId, role: 'glaszetter' });
   const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
   try {
-    const response = await fetch(base, { method: 'PATCH', headers, body: JSON.stringify({ supplierName: 'Testleverancier', deliveryDate: '2026-10-21' }) });
+    const response = await fetch(base, { method: 'PATCH', headers, body: JSON.stringify({ orderNumber: 'GS-2026-HTTP', supplierName: 'Testleverancier', deliveryDate: '2026-10-21' }) });
     assert.equal(response.status, 200);
-    const saved = (await response.json()).data; assert.equal(saved.deliveryDate, '2026-10-21');
-    const loaded = await fetch(base, { headers }); assert.equal((await loaded.json()).data.supplierName, 'Testleverancier');
+    const saved = (await response.json()).data; assert.equal(saved.orderNumber, 'GS-2026-HTTP'); assert.equal(saved.deliveryDate, '2026-10-21');
+    const loaded = await fetch(base, { headers }); const reloaded = (await loaded.json()).data; assert.equal(reloaded.supplierName, 'Testleverancier'); assert.equal(reloaded.orderNumber, 'GS-2026-HTTP');
+    const duplicate = await service.createJob(companyId, { projectId, name: 'Andere bestelling', orderNumber: 'GS-2026-DUP' });
+    const collision = await fetch(base, { method: 'PATCH', headers, body: JSON.stringify({ orderNumber: 'gs-2026-dup' }) });
+    assert.equal(collision.status, 409); assert.equal((await collision.json()).error.code, 'ORDER_NUMBER_EXISTS');
+    assert.equal((await service.getJob(companyId, jobId)).orderNumber, 'GS-2026-HTTP');
     const invalid = await fetch(base, { method: 'PATCH', headers, body: JSON.stringify({ deliveryDate: '2026-02-30' }) });
     assert.equal(invalid.status,400); assert.equal((await invalid.json()).error.code, 'INVALID_INPUT');
     const otherToken = signToken({ companyId: otherCompanyId, userId: otherCompanyId, role: 'glaszetter' });
@@ -378,4 +385,36 @@ test('HTTP order details save, reload, validation, authentication and company is
     server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve()));
     if (previousSecret === undefined) delete process.env.JWT_SECRET; else process.env.JWT_SECRET = previousSecret;
   }
+});
+
+test('order number persists after reload and unrelated updates, clears explicitly and can be reused by another company', async () => {
+  await service.updateJob(companyId, jobId, { orderNumber: '  GS-2026-001  ' });
+  await service.updateJob(companyId, jobId, { notes: 'Notitie gewijzigd' });
+  assert.equal((await service.getJob(companyId, jobId)).orderNumber, 'GS-2026-001');
+  assert.equal((await service.listJobs(companyId, { page: 1, limit: 100 })).data[0].orderNumber, 'GS-2026-001');
+  const otherProject = '00000000-0000-4000-8000-000000000008';
+  await db.query('INSERT INTO projects VALUES ($1,$2)', [otherProject, otherCompanyId]);
+  const otherJob = await service.createJob(otherCompanyId, { projectId: otherProject, name: 'Ander bedrijf', orderNumber: 'GS-2026-001' });
+  assert.equal(otherJob.orderNumber, 'GS-2026-001');
+  await assert.rejects(service.updateJob(otherCompanyId, jobId, { orderNumber: null }), /not found/i);
+  await service.updateJob(companyId, jobId, { orderNumber: '' });
+  assert.equal((await service.getJob(companyId, jobId)).orderNumber, undefined);
+  assert.equal((await service.getJob(otherCompanyId, otherJob.id)).orderNumber, 'GS-2026-001');
+});
+
+test('duplicate order numbers reject atomically, including simultaneous writers; invalid input preserves data', async () => {
+  const second = await service.createJob(companyId, { projectId, name: 'Tweede klus' });
+  const results = await Promise.allSettled([
+    service.updateJob(companyId, jobId, { orderNumber: 'GS-2026-002' }),
+    service.updateJob(companyId, second.id, { orderNumber: 'gs-2026-002' }),
+  ]);
+  assert.equal(results.filter(result => result.status === 'fulfilled').length, 1);
+  assert.equal((results.find(result => result.status === 'rejected') as PromiseRejectedResult).reason.code, 'ORDER_NUMBER_EXISTS');
+  const winner = (results.find(result => result.status === 'fulfilled') as PromiseFulfilledResult<any>).value;
+  const loser = winner.id === jobId ? second.id : jobId;
+  const prior = await service.getJob(companyId, loser);
+  await assert.rejects(service.updateJob(companyId, loser, { orderNumber: '  GS-2026-002  ', notes: 'Mag niet wijzigen' }), (error: any) => error.code === 'ORDER_NUMBER_EXISTS');
+  assert.equal((await service.getJob(companyId, loser)).notes, prior.notes);
+  for (const orderNumber of [42, 'x'.repeat(61), 'Geen\u0000NUL', 'Regel\nnummer']) await assert.rejects(service.updateJob(companyId, winner.id, { orderNumber } as any), (error: any) => error.status === 400);
+  assert.equal((await service.getJob(companyId, winner.id)).orderNumber, winner.orderNumber);
 });

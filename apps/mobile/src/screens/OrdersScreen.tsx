@@ -19,7 +19,7 @@ export function OrdersScreen() {
   const confirmLeave = useCallback((action: () => void) => {
     if ([...edits.current.values()].some(value => value.busy)) { Alert.alert("Opslaan bezig", "Wacht tot het opslaan is afgerond."); return; }
     if (!edits.current.size) { action(); return; }
-    Alert.alert("Niet opgeslagen", "Je leverancier of leverdatum is nog niet opgeslagen. Wil je je wijzigingen weggooien?", [{ text: "Verder invullen", style: "cancel" }, { text: "Weggooien", style: "destructive", onPress: () => { edits.current.clear(); setEditorVersion(value => value + 1); action(); } }]);
+    Alert.alert("Niet opgeslagen", "Je bestelgegevens zijn nog niet opgeslagen. Wil je je wijzigingen weggooien?", [{ text: "Verder invullen", style: "cancel" }, { text: "Weggooien", style: "destructive", onPress: () => { edits.current.clear(); setEditorVersion(value => value + 1); action(); } }]);
   }, []);
   useEffect(() => navigation.addListener("beforeRemove", event => {
     if (!edits.current.size) return;

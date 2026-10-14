@@ -76,6 +76,7 @@ export async function generateOrderPdf(input: OrderPdfInput, generatedAt = new D
   try {
     header();
     paragraph('Afzender', input.company.name);
+    paragraph('Bestelnummer', input.job.orderNumber || 'Nog niet ingevuld');
     paragraph('Leverancier', input.job.supplierName || 'Nog niet ingevuld');
     paragraph('Verwachte leverdatum', formatDeliveryDate(input.job.deliveryDate));
     paragraph('Klus', input.job.name);

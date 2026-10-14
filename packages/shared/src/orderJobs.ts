@@ -14,9 +14,13 @@ export async function loadOrderJobs(fetchPage: (page: number) => Promise<Paginat
   }
 }
 
-export interface OrderDetailsInput { supplierName?: string | null; deliveryDate?: string | null; }
+export interface OrderDetailsInput { orderNumber?: string | null; supplierName?: string | null; deliveryDate?: string | null; }
 export function normalizeOrderDetails(input: OrderDetailsInput): OrderDetailsInput {
   const result: OrderDetailsInput = {};
+  if (input.orderNumber !== undefined) {
+    if (input.orderNumber !== null && (typeof input.orderNumber !== 'string' || input.orderNumber.length > 60 || /[\u0000-\u001f\u007f\ud800-\udfff]/u.test(input.orderNumber))) throw new Error('Vul een bestelnummer in van maximaal 60 tekens, zonder ongeldige tekens.');
+    result.orderNumber = input.orderNumber?.trim() || null;
+  }
   if (input.supplierName !== undefined) {
     if (input.supplierName !== null && (typeof input.supplierName !== 'string' || input.supplierName.length > 200 || /[\u0000-\u001f\u007f\ud800-\udfff]/u.test(input.supplierName))) {
       throw new Error('Vul een leverancier in van maximaal 200 tekens, zonder ongeldige tekens.');

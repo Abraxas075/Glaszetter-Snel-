@@ -32,6 +32,7 @@ export default function DashboardOverviewPage() {
     { href: '/dashboard/customers', label: 'Klanten', value: counts.customers },
     { href: '/dashboard/projects', label: 'Projecten', value: counts.projects },
     { href: '/dashboard/jobs', label: 'Klussen', value: counts.jobs },
+    { href: '/dashboard/bestellingen', label: 'Bestellingen', value: '›' },
   ];
 
   return (

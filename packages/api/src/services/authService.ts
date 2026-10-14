@@ -1,3 +1,4 @@
+import { normalizeUsername } from './username';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import type { User, UserRole } from '@glaszetter/shared';
@@ -19,7 +20,7 @@ export interface JwtPayload {
 
 export class InvalidCredentialsError extends Error {
   constructor() {
-    super('Invalid email or password');
+    super('Ongeldige gebruikersnaam, e-mail of wachtwoord');
     this.name = 'InvalidCredentialsError';
   }
 }
@@ -53,7 +54,13 @@ export const login = async (
   email: string,
   password: string
 ): Promise<{ user: User; token: string }> => {
-  const found = await findUserByEmail(email);
+  const identifier = email.trim();
+  const username = identifier.includes('@') ? null : normalizeUsername(identifier);
+  const found = username ? await (async () => {
+    const result = await pool.query<UserRow>('SELECT * FROM users WHERE username = $1', [username]);
+    const row = result.rows[0];
+    return row ? { user: mapUserRow(row), passwordHash: row.password_hash } : null;
+  })() : await findUserByEmail(identifier);
   if (!found) {
     throw new InvalidCredentialsError();
   }

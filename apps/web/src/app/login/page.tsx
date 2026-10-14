@@ -38,15 +38,17 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} style={styles.form}>
           <label style={styles.label} htmlFor="email">
-            E-mailadres
+            Gebruikersnaam of e-mailadres
           </label>
           <input
             id="email"
-            type="email"
+            type="text"
+            autoComplete="username"
+            autoCapitalize="none"
             style={styles.input}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="naam@bedrijf.nl"
+            placeholder="justin of naam@bedrijf.nl"
             required
           />
 
@@ -56,6 +58,7 @@ export default function LoginPage() {
           <input
             id="password"
             type="password"
+            autoComplete="current-password"
             style={styles.input}
             value={password}
             onChange={(e) => setPassword(e.target.value)}

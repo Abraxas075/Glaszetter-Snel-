@@ -57,7 +57,8 @@ export const mapCompanyRow = (row: CompanyRow): Company => ({
 export interface UserRow {
   id: string;
   company_id: string;
-  email: string;
+  email: string | null;
+  username?: string | null;
   password_hash: string;
   name: string;
   role: UserRole;
@@ -67,7 +68,8 @@ export interface UserRow {
 
 export const mapUserRow = (row: UserRow): User => ({
   id: row.id,
-  email: row.email,
+  email: row.email ?? '',
+  username: row.username ?? undefined,
   name: row.name,
   role: row.role,
   companyId: row.company_id,

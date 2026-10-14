@@ -1,3 +1,4 @@
+import { normalizeUsername } from './username';
 import type { User, UserRole } from '@glaszetter/shared';
 import { pool } from '../db/pool';
 import { mapUserRow, type UserRow } from '../db/rows';
@@ -5,14 +6,15 @@ import { hashPassword } from './authService';
 
 export interface CreateUserInput {
   name: string;
-  email: string;
+  email?: string;
+  username?: string;
   password: string;
   role: UserRole;
 }
 
 export class EmailInUseError extends Error {
   constructor() {
-    super('A user with this email already exists');
+    super('Dit e-mailadres of deze gebruikersnaam is al in gebruik');
     this.name = 'EmailInUseError';
   }
 }
@@ -29,14 +31,18 @@ export const createUser = async (
   companyId: string,
   input: CreateUserInput
 ): Promise<User> => {
+  const username = input.username ? normalizeUsername(input.username) : null;
+  if (input.username && !username) throw new Error('Ongeldige gebruikersnaam');
+  const email = input.email?.trim() || null;
+  if (!email && !username) throw new Error('Gebruikersnaam of e-mail is verplicht');
   const passwordHash = await hashPassword(input.password);
 
   try {
     const result = await pool.query<UserRow>(
-      `INSERT INTO users (company_id, email, password_hash, name, role)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO users (company_id, email, password_hash, name, role, username)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
-      [companyId, input.email, passwordHash, input.name, input.role]
+      [companyId, email, passwordHash, input.name.trim(), input.role, username]
     );
     return mapUserRow(result.rows[0]);
   } catch (err) {

@@ -7,6 +7,7 @@ import { createUser, listUsers } from '../../../lib/users';
 import { createTeam, listTeams, updateTeam } from '../../../lib/teams';
 import { ApiError } from '../../../lib/api';
 import { USER_ROLE_LABELS, USER_ROLES } from '../../../constants/statusLabels';
+import { EmployeeBatch } from './EmployeeBatch';
 import { pageStyles, formStyles } from '../../../styles/shared';
 
 export default function TeamPage() {
@@ -44,6 +45,7 @@ export default function TeamPage() {
       <h1 style={pageStyles.title}>Team</h1>
       {error && <p style={pageStyles.error}>{error}</p>}
 
+      <EmployeeBatch onCreated={load} />
       <EmployeesSection users={users} onCreated={load} />
       <TeamsSection users={users ?? []} teams={teams} onChanged={load} />
     </div>
@@ -59,6 +61,7 @@ function EmployeesSection({
 }) {
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<UserRole>('glaszetter');
@@ -69,16 +72,16 @@ function EmployeesSection({
     e.preventDefault();
     setFormError(null);
 
-    if (!name.trim() || !email.trim() || password.length < 8) {
-      setFormError('Naam, e-mail en een wachtwoord van minstens 8 tekens zijn verplicht.');
+    if (!name.trim() || (!email.trim() && !username.trim()) || password.length < 8) {
+      setFormError('Naam, gebruikersnaam of e-mail en een wachtwoord van minstens 8 tekens zijn verplicht.');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      await createUser({ name: name.trim(), email: email.trim(), password, role });
+      await createUser({ name: name.trim(), email: email.trim() || undefined, username: username.trim() || undefined, password, role });
       setName('');
-      setEmail('');
+      setEmail(''); setUsername('');
       setPassword('');
       setRole('glaszetter');
       setShowForm(false);
@@ -111,8 +114,11 @@ function EmployeesSection({
             onChange={(e) => setName(e.target.value)}
           />
 
+          <label style={formStyles.label} htmlFor="emp-username">Gebruikersnaam</label>
+          <input id="emp-username" style={formStyles.input} value={username} onChange={e => setUsername(e.target.value)} autoCapitalize="none" autoComplete="off" placeholder="bijvoorbeeld roberto" />
+          <p>Vul een gebruikersnaam of e-mailadres in. Gebruikersnamen zijn uniek en bevatten 3–40 letters, cijfers, punten, streepjes of underscores.</p>
           <label style={formStyles.label} htmlFor="emp-email">
-            E-mail
+            E-mail (optioneel bij gebruikersnaam)
           </label>
           <input
             id="emp-email"
@@ -163,6 +169,7 @@ function EmployeesSection({
           <thead>
             <tr>
               <th style={pageStyles.th}>Naam</th>
+              <th style={pageStyles.th}>Gebruikersnaam</th>
               <th style={pageStyles.th}>E-mail</th>
               <th style={pageStyles.th}>Rol</th>
             </tr>
@@ -171,7 +178,8 @@ function EmployeesSection({
             {users.map((u) => (
               <tr key={u.id}>
                 <td style={pageStyles.td}>{u.name}</td>
-                <td style={pageStyles.td}>{u.email}</td>
+                <td style={pageStyles.td}>{u.username || '—'}</td>
+                <td style={pageStyles.td}>{u.email || '—'}</td>
                 <td style={pageStyles.td}>{USER_ROLE_LABELS[u.role]}</td>
               </tr>
             ))}

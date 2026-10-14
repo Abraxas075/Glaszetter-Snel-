@@ -5,12 +5,13 @@ import { findUserById, login, InvalidCredentialsError } from '../services/authSe
 export const authRouter = Router();
 
 authRouter.post('/login', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  const { email, password } = req.body ?? {};
+  const { password } = req.body ?? {};
+  const email = req.body?.identifier ?? req.body?.username ?? req.body?.email;
 
   if (typeof email !== 'string' || typeof password !== 'string') {
     res.status(400).json({
       success: false,
-      error: { code: 'INVALID_INPUT', message: 'email and password are required' },
+      error: { code: 'INVALID_INPUT', message: 'Gebruikersnaam of e-mail en wachtwoord zijn verplicht' },
     });
     return;
   }

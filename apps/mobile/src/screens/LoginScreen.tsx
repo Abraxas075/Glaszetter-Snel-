@@ -39,14 +39,15 @@ export const LoginScreen: React.FC = () => {
       </View>
 
       <View style={styles.form}>
-        <Text style={styles.label}>E-mailadres</Text>
+        <Text style={styles.label}>Gebruikersnaam of e-mailadres</Text>
         <TextInput
           style={styles.input}
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
-          keyboardType="email-address"
-          placeholder="naam@bedrijf.nl"
+          autoCorrect={false}
+          autoComplete="username"
+          placeholder="justin of naam@bedrijf.nl"
           placeholderTextColor={colors.textSecondary}
         />
 
@@ -55,6 +56,7 @@ export const LoginScreen: React.FC = () => {
           style={styles.input}
           value={password}
           onChangeText={setPassword}
+          autoComplete="current-password"
           secureTextEntry
           placeholder="••••••••"
           placeholderTextColor={colors.textSecondary}

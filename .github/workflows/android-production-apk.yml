@@ -1,0 +1,82 @@
+name: Android productie APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/mobile/**'
+      - 'packages/shared/**'
+      - 'package*.json'
+      - '.github/workflows/android-production-apk.yml'
+  pull_request:
+    paths:
+      - 'apps/mobile/**'
+      - 'packages/shared/**'
+      - 'package*.json'
+      - '.github/workflows/android-production-apk.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  apk:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    env:
+      CI: '1'
+      APK_PRODUCTION: '1'
+      EXPO_PUBLIC_API_URL: https://glaszetter-api.onrender.com/api/v1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Validate production API configuration
+        run: |
+          echo "ANDROID_VERSION_CODE=$((100000 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
+          node -e "require('./apps/mobile/app.config.js')({config: require('./apps/mobile/app.json').expo})"
+      - run: npm ci --include=dev
+      - name: Check native module resolution
+        run: |
+          node <<'NODE'
+          const path = require('node:path');
+          for (const name of ['expo-constants', 'expo-linking', 'expo-status-bar']) {
+            const root = require(name + '/package.json').version;
+            const mobile = require(require.resolve(name + '/package.json', { paths: [path.resolve('apps/mobile')] })).version;
+            if (root !== mobile) throw new Error(name + ': native autolinking and mobile resolve different versions');
+            console.log(name, root);
+          }
+          NODE
+      - run: npm run build -w packages/shared
+      - run: npm run type-check -w apps/mobile
+      - run: npm run prebuild:android -w apps/mobile
+      - name: Build standalone production APK
+        working-directory: apps/mobile/android
+        run: ./gradlew :app:assembleRelease --no-daemon --max-workers=2 -PreactNativeArchitectures=arm64-v8a,armeabi-v7a
+      - name: Verify APK signature and prepare download
+        run: |
+          APK=apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+          SIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -n 1)
+          "$SIGNER" verify --verbose "$APK"
+          cp "$APK" Glaszetter-Snel-Productie.apk
+          sha256sum Glaszetter-Snel-Productie.apk > Glaszetter-Snel-Productie.sha256
+          node -e "require('fs').writeFileSync('Glaszetter-Snel-Productie-build.json', JSON.stringify({commit:process.env.GITHUB_SHA,api:process.env.EXPO_PUBLIC_API_URL,versionCode:process.env.ANDROID_VERSION_CODE,run:process.env.GITHUB_RUN_ID},null,2))"
+          cat Glaszetter-Snel-Productie.sha256 >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7
+        with:
+          path: Glaszetter-Snel-Productie.apk
+          archive: false
+          retention-days: 30
+      - uses: actions/upload-artifact@v7
+        with:
+          name: productie-apk-buildgegevens
+          path: |
+            Glaszetter-Snel-Productie.sha256
+            Glaszetter-Snel-Productie-build.json
+          retention-days: 30

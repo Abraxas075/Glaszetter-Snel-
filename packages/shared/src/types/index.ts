@@ -85,6 +85,9 @@ export interface Job {
   dueDate?: Date;
   teamId?: string;
   scheduledDate?: Date;
+  supplierName?: string;
+  /** Calendar date YYYY-MM-DD, without a time zone. */
+  deliveryDate?: string;
   notes?: string;
   createdAt: Date;
   updatedAt: Date;

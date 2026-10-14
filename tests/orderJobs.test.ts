@@ -20,3 +20,15 @@ test('empty lists finish and duplicate IDs are shown once', async () => {
  const result = await loadOrderJobs(async number => page(number,[job('same','ordered')])); assert.equal(result.length,1);
  await assert.rejects(loadOrderJobs(async () => page(0,[])), /niet volledig/);
 });
+
+test('Dutch calendar input validates leap days and round-trips without a timezone', async () => {
+ const { parseDutchDeliveryDate, formatDeliveryDate, normalizeOrderDetails } = await import('../packages/shared/src/orderJobs');
+ assert.equal(parseDutchDeliveryDate('25-10-2026'), '2026-10-25');
+ assert.equal(formatDeliveryDate('2026-10-25'), '25-10-2026');
+ assert.equal(parseDutchDeliveryDate('29-02-2028'), '2028-02-29');
+ assert.equal(parseDutchDeliveryDate(' '), null);
+ assert.throws(() => parseDutchDeliveryDate('29-02-2026'));
+ assert.throws(() => parseDutchDeliveryDate('2026-10-25'));
+ assert.deepEqual(normalizeOrderDetails({supplierName:'  Glas Noord  '}), {supplierName:'Glas Noord'});
+ assert.deepEqual(normalizeOrderDetails({}), {});
+});

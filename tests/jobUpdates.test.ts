@@ -28,7 +28,7 @@ before(async () => {
     CREATE TABLE projects (id uuid PRIMARY KEY, company_id uuid NOT NULL);
     CREATE TABLE teams (id uuid PRIMARY KEY, company_id uuid NOT NULL);
     CREATE TABLE jobs (
-      id uuid PRIMARY KEY,
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
       company_id uuid NOT NULL,
       project_id uuid NOT NULL REFERENCES projects(id),
       name text NOT NULL,
@@ -47,6 +47,13 @@ before(async () => {
     CREATE TABLE quotes (job_id uuid NOT NULL);
     CREATE TABLE invoices (job_id uuid NOT NULL);
   `);
+  const { createRequire } = await import('node:module');
+  const require = createRequire(import.meta.url);
+  const migration = require('../packages/api/migrations/1700000000016_order-details.cjs');
+  const Builder = require('node-pg-migrate/dist/migrationBuilder').default;
+  const builder = new Builder({}, undefined, false, { info(){}, warn(){}, error(){} });
+  migration.up(builder);
+  await db.exec(builder.getSql());
   await db.query('INSERT INTO projects VALUES ($1, $2)', [projectId, companyId]);
   await db.query('INSERT INTO teams VALUES ($1, $2), ($3, $4), ($5, $2)', [
     teamId,
@@ -312,4 +319,63 @@ test('delete and recreation cannot reuse an old revision even with identical con
   assert.notEqual(first.revision, next.revision);
   await assert.rejects(deleteMeetbon(companyId, jobId, first), (e: any) => e.code === 'MEETBON_CHANGED');
   assert.deepEqual(await getMeetbon(companyId, jobId), next);
+});
+
+test('supplier and delivery date persist on create, patch, list and reload without altering the work schedule', async () => {
+  const created = await service.createJob(companyId, { projectId, name: 'Nieuwe bestelling', status: 'ordered', supplierName: '  Glasleverancier  ', deliveryDate: '2028-02-29' });
+  assert.equal(created.supplierName, 'Glasleverancier');
+  assert.equal(created.deliveryDate, '2028-02-29');
+  await service.updateJob(companyId, jobId, { supplierName: 'Leverancier Noord', deliveryDate: '2026-10-25' });
+  await service.updateJob(companyId, jobId, { notes: 'Werkdatum blijft gelijk' });
+  const saved = await service.getJob(companyId, jobId);
+  assert.equal(saved.supplierName, 'Leverancier Noord');
+  assert.equal(saved.deliveryDate, '2026-10-25');
+  assert.equal(new Date(saved.scheduledDate!).toISOString().slice(0,10), '2026-09-14');
+  assert.equal(new Date(saved.dueDate!).toISOString(), '2026-09-21T14:30:00.000Z');
+  const listed = (await service.listJobs(companyId, { page: 1, limit: 100 })).data.find(job => job.id === jobId)!;
+  assert.equal(listed.deliveryDate, '2026-10-25');
+  assert.equal(listed.supplierName, 'Leverancier Noord');
+  await assert.rejects(service.updateJob(otherCompanyId, jobId, { supplierName: 'Ander bedrijf', deliveryDate: null }), /not found/i);
+  assert.equal((await service.getJob(companyId, jobId)).deliveryDate, '2026-10-25');
+  await service.updateJob(companyId, jobId, { supplierName: ' ', deliveryDate: '' });
+  const cleared = await service.getJob(companyId, jobId);
+  assert.equal(cleared.supplierName, undefined); assert.equal(cleared.deliveryDate, undefined);
+});
+
+test('invalid supplier and calendar dates reject the complete patch and preserve saved data', async () => {
+  await service.updateJob(companyId, jobId, { supplierName: 'Bewaren', deliveryDate: '2026-10-14' });
+  for (const input of [
+    { supplierName: 'x'.repeat(201) }, { supplierName: 'Geen\u0000NUL' }, { supplierName: 42 },
+    { deliveryDate: '2026-02-29' }, { deliveryDate: '2026-04-31' }, { deliveryDate: '14-10-2026' },
+    { deliveryDate: '2026-10-14T00:00:00Z' }, { deliveryDate: 42 }, { deliveryDate: '0000-01-01' },
+  ]) {
+    await assert.rejects(service.updateJob(companyId, jobId, { notes: 'Mag niet wijzigen', ...input } as any), (error: any) => error.status === 400 && error.code === 'INVALID_INPUT');
+  }
+  const saved = await service.getJob(companyId, jobId);
+  assert.equal(saved.supplierName, 'Bewaren'); assert.equal(saved.deliveryDate, '2026-10-14'); assert.equal(saved.notes, 'Bewaren');
+});
+
+test('HTTP order details save, reload, validation, authentication and company isolation', async () => {
+  const previousSecret = process.env.JWT_SECRET; process.env.JWT_SECRET = 'disposable-order-test-key';
+  const { signToken } = await import('../packages/api/src/services/authService');
+  const { default: app } = await import('../packages/api/src/app');
+  const server = app.listen(0); await new Promise<void>(resolve => server.once('listening', resolve));
+  const base = `http://127.0.0.1:${(server.address() as any).port}/api/v1/jobs/${jobId}`;
+  const token = signToken({ companyId, userId: companyId, role: 'glaszetter' });
+  const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
+  try {
+    const response = await fetch(base, { method: 'PATCH', headers, body: JSON.stringify({ supplierName: 'Testleverancier', deliveryDate: '2026-10-21' }) });
+    assert.equal(response.status, 200);
+    const saved = (await response.json()).data; assert.equal(saved.deliveryDate, '2026-10-21');
+    const loaded = await fetch(base, { headers }); assert.equal((await loaded.json()).data.supplierName, 'Testleverancier');
+    const invalid = await fetch(base, { method: 'PATCH', headers, body: JSON.stringify({ deliveryDate: '2026-02-30' }) });
+    assert.equal(invalid.status,400); assert.equal((await invalid.json()).error.code, 'INVALID_INPUT');
+    const otherToken = signToken({ companyId: otherCompanyId, userId: otherCompanyId, role: 'glaszetter' });
+    assert.equal((await fetch(base, { method: 'PATCH', headers: { ...headers, Authorization: `Bearer ${otherToken}` }, body: JSON.stringify({ supplierName: 'Andere' }) })).status, 404);
+    assert.equal((await fetch(base, { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ deliveryDate: null }) })).status, 401);
+    assert.equal((await service.getJob(companyId, jobId)).supplierName, 'Testleverancier');
+  } finally {
+    server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve()));
+    if (previousSecret === undefined) delete process.env.JWT_SECRET; else process.env.JWT_SECRET = previousSecret;
+  }
 });

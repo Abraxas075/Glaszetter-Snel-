@@ -9,6 +9,8 @@ export interface JobInput {
   teamId?: string | null;
   scheduledDate?: string | null;
   notes?: string | null;
+  supplierName?: string | null;
+  deliveryDate?: string | null;
 }
 
 export interface JobFilters {

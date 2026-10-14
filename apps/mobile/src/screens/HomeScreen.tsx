@@ -10,7 +10,7 @@ import { MenuIcon, type MenuIconName } from '../components/MenuIcon';
 import { sapphire } from '../constants/sapphire';
 const actions: {
   label: string;
-  path: '/spoed' | '/jobs' | '/kaart' | '/agenda' | '/chat' | '/customers';
+  path: '/bestellingen' | '/spoed' | '/jobs' | '/kaart' | '/agenda' | '/chat' | '/customers';
   icon: MenuIconName;
   urgent?: boolean;
 }[] = [
@@ -19,6 +19,7 @@ const actions: {
   { label: 'Agenda', path: '/agenda', icon: 'calendar' },
   { label: 'Chat', path: '/chat', icon: 'message-square' },
   { label: 'Klantgegevens', path: '/customers', icon: 'users' },
+  { label: 'Bestellingen', path: '/bestellingen', icon: 'package' },
   { label: 'Spoedmeldingen', path: '/spoed', icon: 'clipboard', urgent: true },
 ];
 export const HomeScreen: React.FC = () => {

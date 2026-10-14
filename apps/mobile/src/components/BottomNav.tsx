@@ -15,6 +15,7 @@ export const sapphirePaths = [
   '/',
   '/my-jobs',
   '/spoed',
+  '/bestellingen',
   '/agenda',
   '/kaart',
   '/customers',

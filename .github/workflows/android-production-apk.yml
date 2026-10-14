@@ -2,6 +2,13 @@ name: Android productie APK
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/mobile/**'
+      - 'packages/shared/**'
+      - 'package*.json'
+      - '.github/workflows/android-production-apk.yml'
   pull_request:
     paths:
       - 'apps/mobile/**'
@@ -19,7 +26,6 @@ jobs:
     env:
       CI: '1'
       APK_PRODUCTION: '1'
-      ANDROID_VERSION_CODE: ${{ 100000 + github.run_number }}
       EXPO_PUBLIC_API_URL: https://glaszetter-api.onrender.com/api/v1
     steps:
       - uses: actions/checkout@v4
@@ -33,6 +39,7 @@ jobs:
           java-version: '17'
       - name: Validate production API configuration
         run: |
+          echo "ANDROID_VERSION_CODE=$((100000 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
           node -e "require('./apps/mobile/app.config.js')({config: require('./apps/mobile/app.json').expo})"
       - run: npm ci --include=dev
       - name: Check native module resolution

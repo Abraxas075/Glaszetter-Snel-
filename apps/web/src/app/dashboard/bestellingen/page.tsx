@@ -14,7 +14,7 @@ export default function OrdersPage() {
   }, []);
   function confirmLeave(action: () => void) {
     if ([...edits.current.values()].some(value => value.busy)) { window.alert('Wacht tot het opslaan is afgerond.'); return; }
-    if (edits.current.size && !window.confirm('Je leverancier of leverdatum is nog niet opgeslagen. Wil je je wijzigingen weggooien?')) return;
+    if (edits.current.size && !window.confirm('Je bestelgegevens zijn nog niet opgeslagen. Wil je je wijzigingen weggooien?')) return;
     if (edits.current.size) { edits.current.clear(); setEditorVersion(value => value + 1); }
     action();
   }

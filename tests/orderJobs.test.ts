@@ -32,3 +32,12 @@ test('Dutch calendar input validates leap days and round-trips without a timezon
  assert.deepEqual(normalizeOrderDetails({supplierName:'  Glas Noord  '}), {supplierName:'Glas Noord'});
  assert.deepEqual(normalizeOrderDetails({}), {});
 });
+
+
+test('order number preserves custom formats, trims edges and allows explicit clearing', async () => {
+ const { normalizeOrderDetails } = await import('../packages/shared/src/orderJobs');
+ assert.deepEqual(normalizeOrderDetails({orderNumber:'  GS/2026-001-A  '}), {orderNumber:'GS/2026-001-A'});
+ assert.deepEqual(normalizeOrderDetails({orderNumber:null}), {orderNumber:null});
+ assert.deepEqual(normalizeOrderDetails({orderNumber:' '}), {orderNumber:null});
+ assert.throws(()=>normalizeOrderDetails({orderNumber:'x'.repeat(61)}));
+});

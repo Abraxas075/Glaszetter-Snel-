@@ -13,7 +13,7 @@ const date = new Date('2026-10-14T07:00:00Z');
 const input: OrderPdfInput = {
   company: { id: companyId, name: 'Glaszetter Snel', createdAt: date, updatedAt: date },
   project: { id: projectId, companyId, customerId: companyId, name: 'Voorbeeldproject', address: 'Voorbeeldstraat 10', city: 'Heemskerk', status: 'active', createdAt: date, updatedAt: date },
-  job: { id: jobId, companyId, projectId, name: 'Voorbeeldklus', status: 'ordered', supplierName: 'Voorbeeldleverancier', deliveryDate: '2026-10-21', createdAt: date, updatedAt: date },
+  job: { id: jobId, companyId, projectId, name: 'Voorbeeldklus', status: 'ordered', orderNumber: 'GS-2026-001', supplierName: 'Voorbeeldleverancier', deliveryDate: '2026-10-21', createdAt: date, updatedAt: date },
   data: { fields: {}, checks: {}, lines: [{ quantity: 2, width: 875, height: 484, glassType: 'HR++', notes: 'Woonkamer' }] }, updatedAt: date,
 };
 let generate: typeof import('../packages/api/src/services/orderPdfService')['generateOrderPdf'];
@@ -27,11 +27,12 @@ before(async () => {
   db = new PGlite();
   await db.exec(`CREATE TABLE companies (id uuid PRIMARY KEY, name text);
     CREATE TABLE projects (id uuid PRIMARY KEY, company_id uuid, customer_id uuid, name text, status text, address text, city text);
-    CREATE TABLE jobs (id uuid PRIMARY KEY, company_id uuid, project_id uuid, name text, status text, supplier_name text, delivery_date date);
+    CREATE TABLE jobs (id uuid PRIMARY KEY, company_id uuid, project_id uuid, name text, status text, supplier_name text, delivery_date date, order_number text);
     CREATE TABLE meetbons (job_id uuid PRIMARY KEY, data jsonb, updated_at timestamptz);`);
   await db.query('INSERT INTO companies VALUES ($1,$2)', [companyId, input.company.name]);
   await db.query("INSERT INTO projects VALUES ($1,$2,$2,'Voorbeeldproject','active','Voorbeeldstraat 10','Heemskerk')", [projectId,companyId]);
   await db.query("INSERT INTO jobs VALUES ($1,$2,$3,'Voorbeeldklus','ordered','Voorbeeldleverancier','2026-10-21'),($4,$2,$3,'Zonder bon','ordered',NULL,NULL)",[jobId,companyId,projectId,unsavedId]);
+  await db.query("UPDATE jobs SET order_number='GS-2026-001' WHERE id=$1", [jobId]);
   await db.query('INSERT INTO meetbons VALUES ($1,$2,$3)',[jobId,JSON.stringify(input.data),date.toISOString()]);
   ({ pool } = await import('../packages/api/src/db/pool'));
   mock.method(pool,'query',(sql:string,params:unknown[])=>db.query(sql,params));
@@ -52,7 +53,7 @@ async function parse(pdf:Buffer) {
 test('order PDF has supplier, calendar date, saved panes, quantity-aware area and logo on a single page',async()=>{
   const pdf=await generate(input,date);const pages=await parse(pdf);
   assert.equal(pdf.subarray(0,5).toString(),'%PDF-'); assert.equal(pages.length,1);
-  for(const value of ['BESTELBON','Voorbeeldleverancier','21-10-2026','Voorbeeldklus','Voorbeeldproject','Voorbeeldstraat 10','Breedte','Hoogte','875','484','HR++','Woonkamer','2 ruiten | 0,847','Pagina 1 van 1']) assert.ok(pages[0].includes(value),value);
+  for(const value of ['BESTELBON','GS-2026-001','Voorbeeldleverancier','21-10-2026','Voorbeeldklus','Voorbeeldproject','Voorbeeldstraat 10','Breedte','Hoogte','875','484','HR++','Woonkamer','2 ruiten | 0,847','Pagina 1 van 1']) assert.ok(pages[0].includes(value),value);
   assert.ok(pdf.toString('latin1').includes('/Subtype /Image'));
 });
 test('long unbroken pane text continues across pages and every row and quantity remains represented',async()=>{
@@ -62,8 +63,8 @@ test('long unbroken pane text continues across pages and every row and quantity 
   for(let i=0;i<pages.length;i++){assert.ok(pages[i].includes('BESTELBON'));assert.ok(pages[i].includes(`Pagina ${i+1} van ${pages.length}`));}
 });
 test('order PDF does not invent missing supplier or delivery date and exports only saved pane details',async()=>{
-  const pages=await parse(await generate({...input,job:{...input.job,supplierName:undefined,deliveryDate:undefined}},date));
-  assert.ok(pages[0].includes('Leverancier: Nog niet ingevuld'));assert.ok(pages[0].includes('Verwachte leverdatum: Nog niet ingevuld'));
+  const pages=await parse(await generate({...input,job:{...input.job,orderNumber:undefined,supplierName:undefined,deliveryDate:undefined}},date));
+  assert.ok(pages[0].includes('Bestelnummer: Nog niet ingevuld'));assert.ok(pages[0].includes('Leverancier: Nog niet ingevuld'));assert.ok(pages[0].includes('Verwachte leverdatum: Nog niet ingevuld'));
 });
 test('HTTP export uses current saved delivery data, enforces authentication and company ownership, rejects empty or invalid panes',async()=>{
   const headers=(companyId:string)=>({Authorization:`Bearer ${signToken({userId:companyId,companyId,role:'glaszetter'})}`});
@@ -71,9 +72,9 @@ test('HTTP export uses current saved delivery data, enforces authentication and 
   assert.equal((await fetch(endpoint)).status,401);
   assert.equal((await fetch(endpoint,{headers:headers(otherCompanyId)})).status,404);
   const empty=await fetch(`${base}/jobs/${unsavedId}/order/pdf`,{headers:headers(companyId)});assert.equal(empty.status,422);assert.equal((await empty.json()).error.code,'ORDER_HAS_NO_LINES');
-  await db.query("UPDATE jobs SET supplier_name='Gewijzigde leverancier',delivery_date='2026-10-25' WHERE id=$1",[jobId]);
+  await db.query("UPDATE jobs SET order_number='GS-2026-002', supplier_name='Gewijzigde leverancier',delivery_date='2026-10-25' WHERE id=$1",[jobId]);
   const response=await fetch(endpoint,{headers:headers(companyId)});assert.equal(response.status,200);assert.equal(response.headers.get('content-type'),'application/pdf');assert.equal(response.headers.get('cache-control'),'private, no-store');assert.equal(response.headers.get('content-disposition'),'attachment; filename="Bestelbon.pdf"');
-  const text=(await parse(Buffer.from(await response.arrayBuffer()))).join(' ');assert.ok(text.includes('Gewijzigde leverancier'));assert.ok(text.includes('25-10-2026'));
+  const text=(await parse(Buffer.from(await response.arrayBuffer()))).join(' ');assert.ok(text.includes('GS-2026-002'));assert.ok(text.includes('Gewijzigde leverancier'));assert.ok(text.includes('25-10-2026'));
   assert.deepEqual((await db.query('SELECT data FROM meetbons WHERE job_id=$1',[jobId])).rows[0].data,input.data);
   assert.equal((await db.query('SELECT status FROM jobs WHERE id=$1',[jobId])).rows[0].status,'ordered');
   for(const data of [{fields:{},checks:{},lines:[]},{fields:{},checks:{},lines:[{quantity:1,width:0,height:1,glassType:'',notes:''}]}]){

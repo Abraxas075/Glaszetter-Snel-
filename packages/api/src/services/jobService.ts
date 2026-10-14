@@ -12,6 +12,7 @@ export interface JobInput {
   teamId?: string | null;
   scheduledDate?: string | null;
   notes?: string | null;
+  orderNumber?: string | null;
   supplierName?: string | null;
   deliveryDate?: string | null;
 }
@@ -28,6 +29,16 @@ export interface JobFilters {
 function validatedOrderDetails(input: JobInput | Partial<JobInput>) {
   try { return normalizeOrderDetails(input); }
   catch (error) { throw Object.assign(error instanceof Error ? error : new Error('Ongeldige bestelgegevens.'), { status: 400, code: 'INVALID_INPUT' }); }
+}
+
+async function writeJob(sql: string, parameters: unknown[]) {
+  try { return await pool.query<JobRow>(sql, parameters); }
+  catch (error) {
+    if (error && typeof error === 'object' && 'code' in error && error.code === '23505' && 'constraint' in error && error.constraint === 'jobs_company_order_number_unique') {
+      throw new ConflictError('Dit bestelnummer is al in gebruik bij een andere klus binnen je bedrijf. Kies een ander nummer.', 'ORDER_NUMBER_EXISTS');
+    }
+    throw error;
+  }
 }
 
 const assertProjectInCompany = async (companyId: string, projectId: string): Promise<void> => {
@@ -121,9 +132,9 @@ export const createJob = async (companyId: string, input: JobInput): Promise<Job
     await assertTeamInCompany(companyId, input.teamId);
   }
 
-  const result = await pool.query<JobRow>(
-    `INSERT INTO jobs (company_id, project_id, name, status, due_date, team_id, scheduled_date, notes, supplier_name, delivery_date)
-     VALUES ($1, $2, $3, COALESCE($4::job_status, 'concept'), $5, $6, $7, $8, $9, $10::date)
+  const result = await writeJob(
+    `INSERT INTO jobs (company_id, project_id, name, status, due_date, team_id, scheduled_date, notes, supplier_name, delivery_date, order_number)
+     VALUES ($1, $2, $3, COALESCE($4::job_status, 'concept'), $5, $6, $7, $8, $9, $10::date, $11)
      RETURNING *, to_char(delivery_date, 'YYYY-MM-DD') AS delivery_date`,
     [
       companyId,
@@ -136,6 +147,7 @@ export const createJob = async (companyId: string, input: JobInput): Promise<Job
       input.notes ?? null,
       details.supplierName ?? null,
       details.deliveryDate ?? null,
+      details.orderNumber ?? null,
     ]
   );
   return mapJobRow(result.rows[0]);
@@ -156,7 +168,7 @@ export const updateJob = async (
     await assertTeamInCompany(companyId, input.teamId);
   }
 
-  const result = await pool.query<JobRow>(
+  const result = await writeJob(
     `UPDATE jobs SET
        project_id = COALESCE($3, project_id),
        name = COALESCE($4, name),
@@ -167,6 +179,7 @@ export const updateJob = async (
        notes = CASE WHEN $13::boolean THEN $9::text ELSE notes END,
        supplier_name = CASE WHEN $16::boolean THEN $14::text ELSE supplier_name END,
        delivery_date = CASE WHEN $17::boolean THEN $15::date ELSE delivery_date END,
+       order_number = CASE WHEN $19::boolean THEN $18::text ELSE order_number END,
        updated_at = now()
      WHERE id = $1 AND company_id = $2
      RETURNING *, to_char(delivery_date, 'YYYY-MM-DD') AS delivery_date`,
@@ -188,6 +201,8 @@ export const updateJob = async (
       details.deliveryDate ?? null,
       details.supplierName !== undefined,
       details.deliveryDate !== undefined,
+      details.orderNumber ?? null,
+      details.orderNumber !== undefined,
     ]
   );
   return mapJobRow(result.rows[0]);

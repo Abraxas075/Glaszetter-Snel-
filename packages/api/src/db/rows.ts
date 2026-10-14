@@ -142,6 +142,8 @@ export interface JobRow {
   due_date: Date | null;
   team_id: string | null;
   scheduled_date: Date | null;
+  supplier_name: string | null;
+  delivery_date: string | null;
   notes: string | null;
   created_at: Date;
   updated_at: Date;
@@ -156,6 +158,8 @@ export const mapJobRow = (row: JobRow): Job => ({
   dueDate: row.due_date ?? undefined,
   teamId: row.team_id ?? undefined,
   scheduledDate: row.scheduled_date ?? undefined,
+  supplierName: row.supplier_name ?? undefined,
+  deliveryDate: row.delivery_date ?? undefined,
   notes: row.notes ?? undefined,
   createdAt: row.created_at,
   updatedAt: row.updated_at,

@@ -103,8 +103,8 @@ before(async () => {
   db = new PGlite();
   await db.exec(`
     CREATE TABLE companies (id uuid PRIMARY KEY, name text);
-    CREATE TABLE projects (id uuid PRIMARY KEY, company_id uuid, customer_id uuid, name text, status text);
-    CREATE TABLE jobs (id uuid PRIMARY KEY, company_id uuid, project_id uuid, name text, status text);
+    CREATE TABLE projects (id uuid PRIMARY KEY, company_id uuid, customer_id uuid, name text, status text, supplier_name text, delivery_date date);
+    CREATE TABLE jobs (id uuid PRIMARY KEY, company_id uuid, project_id uuid, name text, status text, supplier_name text, delivery_date date);
     CREATE TABLE meetbons (job_id uuid PRIMARY KEY, data jsonb, updated_at timestamptz);
     CREATE TABLE elements (id uuid PRIMARY KEY, company_id uuid, job_id uuid, code text);
     CREATE TABLE photos (id uuid PRIMARY KEY, company_id uuid, job_id uuid, element_id uuid, storage_key text, content_type text, caption text, original_filename text, created_at timestamptz);

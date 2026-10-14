@@ -1,3 +1,4 @@
+import { normalizeOrderDetails } from '@glaszetter/shared';
 import type { Job, JobStatus, PaginatedResponse, PaginationParams } from '@glaszetter/shared';
 import { pool } from '../db/pool';
 import { mapJobRow, type JobRow } from '../db/rows';
@@ -11,6 +12,8 @@ export interface JobInput {
   teamId?: string | null;
   scheduledDate?: string | null;
   notes?: string | null;
+  supplierName?: string | null;
+  deliveryDate?: string | null;
 }
 
 export interface JobFilters {
@@ -20,6 +23,11 @@ export interface JobFilters {
   scheduledTo?: string;
   mine?: boolean;
   userId?: string;
+}
+
+function validatedOrderDetails(input: JobInput | Partial<JobInput>) {
+  try { return normalizeOrderDetails(input); }
+  catch (error) { throw Object.assign(error instanceof Error ? error : new Error('Ongeldige bestelgegevens.'), { status: 400, code: 'INVALID_INPUT' }); }
 }
 
 const assertProjectInCompany = async (companyId: string, projectId: string): Promise<void> => {
@@ -78,7 +86,7 @@ export const listJobs = async (
 
   const [rowsResult, countResult] = await Promise.all([
     pool.query<JobRow>(
-      `SELECT * FROM jobs WHERE ${whereClause}
+      `SELECT *, to_char(delivery_date, 'YYYY-MM-DD') AS delivery_date FROM jobs WHERE ${whereClause}
        ORDER BY created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
       [...params, limit, offset]
     ),
@@ -98,7 +106,7 @@ export const listJobs = async (
 
 export const getJob = async (companyId: string, id: string): Promise<Job> => {
   const result = await pool.query<JobRow>(
-    'SELECT * FROM jobs WHERE id = $1 AND company_id = $2',
+    `SELECT *, to_char(delivery_date, 'YYYY-MM-DD') AS delivery_date FROM jobs WHERE id = $1 AND company_id = $2`,
     [id, companyId]
   );
   const row = result.rows[0];
@@ -107,15 +115,16 @@ export const getJob = async (companyId: string, id: string): Promise<Job> => {
 };
 
 export const createJob = async (companyId: string, input: JobInput): Promise<Job> => {
+  const details = validatedOrderDetails(input);
   await assertProjectInCompany(companyId, input.projectId);
   if (input.teamId) {
     await assertTeamInCompany(companyId, input.teamId);
   }
 
   const result = await pool.query<JobRow>(
-    `INSERT INTO jobs (company_id, project_id, name, status, due_date, team_id, scheduled_date, notes)
-     VALUES ($1, $2, $3, COALESCE($4::job_status, 'concept'), $5, $6, $7, $8)
-     RETURNING *`,
+    `INSERT INTO jobs (company_id, project_id, name, status, due_date, team_id, scheduled_date, notes, supplier_name, delivery_date)
+     VALUES ($1, $2, $3, COALESCE($4::job_status, 'concept'), $5, $6, $7, $8, $9, $10::date)
+     RETURNING *, to_char(delivery_date, 'YYYY-MM-DD') AS delivery_date`,
     [
       companyId,
       input.projectId,
@@ -125,6 +134,8 @@ export const createJob = async (companyId: string, input: JobInput): Promise<Job
       input.teamId ?? null,
       input.scheduledDate ?? null,
       input.notes ?? null,
+      details.supplierName ?? null,
+      details.deliveryDate ?? null,
     ]
   );
   return mapJobRow(result.rows[0]);
@@ -135,6 +146,7 @@ export const updateJob = async (
   id: string,
   input: Partial<JobInput>
 ): Promise<Job> => {
+  const details = validatedOrderDetails(input);
   await getJob(companyId, id); // ensures existence + tenant ownership
 
   if (input.projectId) {
@@ -153,9 +165,11 @@ export const updateJob = async (
        team_id = CASE WHEN $11::boolean THEN $7::uuid ELSE team_id END,
        scheduled_date = CASE WHEN $12::boolean THEN $8::date ELSE scheduled_date END,
        notes = CASE WHEN $13::boolean THEN $9::text ELSE notes END,
+       supplier_name = CASE WHEN $16::boolean THEN $14::text ELSE supplier_name END,
+       delivery_date = CASE WHEN $17::boolean THEN $15::date ELSE delivery_date END,
        updated_at = now()
      WHERE id = $1 AND company_id = $2
-     RETURNING *`,
+     RETURNING *, to_char(delivery_date, 'YYYY-MM-DD') AS delivery_date`,
     [
       id,
       companyId,
@@ -170,6 +184,10 @@ export const updateJob = async (
       input.teamId !== undefined,
       input.scheduledDate !== undefined,
       input.notes !== undefined,
+      details.supplierName ?? null,
+      details.deliveryDate ?? null,
+      details.supplierName !== undefined,
+      details.deliveryDate !== undefined,
     ]
   );
   return mapJobRow(result.rows[0]);

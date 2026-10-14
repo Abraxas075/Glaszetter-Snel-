@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { Route } from 'next';
 import { loadOrderJobs, ORDER_JOB_LABELS, type Job, type OrderJobStatus, type PaginatedResponse } from '@glaszetter/shared';
+import { OrderPdfButton } from './OrderPdfButton';
 import { OrderDetails } from './OrderDetails';
 import { apiRequest } from '../../../lib/api';
 export default function OrdersPage() {
@@ -41,6 +42,7 @@ export default function OrdersPage() {
       <div className="urgent-card-heading"><h2>{job.name}</h2><span>{ORDER_JOB_LABELS[job.status as OrderJobStatus]}</span></div>
       {job.notes && <p className="urgent-description">{job.notes}</p>}
       <OrderDetails key={`${job.id}-${editorVersion}`} job={job} onEditingChange={onEditingChange} onSaved={saved => setJobs(current => current.map(value => value.id === saved.id ? saved : value))} />
+      <OrderPdfButton jobId={job.id} canExport={() => !edits.current.has(job.id)} />
       <Link className="sapphire-button" href={`/dashboard/jobs/${job.id}` as Route}>Klus openen</Link>
     </article>)}
   </section>;

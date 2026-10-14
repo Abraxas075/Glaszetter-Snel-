@@ -1,3 +1,4 @@
+import { generateOrderPdf, getOrderPdfInput } from '../services/orderPdfService';
 import { isMeetbon } from '@glaszetter/shared';
 import { deleteMeetbon, getMeetbon, saveMeetbon } from '../services/meetbonService';
 import { generateMeetbonPdf, getMeetbonPdfInput } from '../services/meetbonPdfService';
@@ -48,6 +49,17 @@ jobsRouter.get('/', async (req: Request, res: Response, next: NextFunction) => {
   } catch (err) {
     next(err);
   }
+});
+
+jobsRouter.get('/:id/order/pdf', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const input = await getOrderPdfInput(req.auth!.companyId, req.params.id);
+    const pdf = await generateOrderPdf(input);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename="Bestelbon.pdf"');
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.send(pdf);
+  } catch (err) { handleNotFound(err, res, next); }
 });
 
 jobsRouter.get('/:id/meetbon/pdf', async (req: Request, res: Response, next: NextFunction) => {

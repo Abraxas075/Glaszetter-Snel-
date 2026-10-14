@@ -27,7 +27,10 @@ app.use(requestBodies);
 
 // Health check
 app.get('/health', (_req: Request, res: Response) => {
-  res.json({ status: 'ok', timestamp: new Date() });
+  // Public source revision lets us verify that the deployed API matches the APK.
+  const commit = process.env.RENDER_GIT_COMMIT;
+  res.setHeader('Cache-Control', 'no-store');
+  res.json({ status: 'ok', timestamp: new Date(), ...(/^[a-f0-9]{40}$/.test(commit ?? '') ? { commit } : {}) });
 });
 
 // Routes

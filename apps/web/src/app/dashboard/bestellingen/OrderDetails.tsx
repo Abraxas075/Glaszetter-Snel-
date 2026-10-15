@@ -1,10 +1,10 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { formatDeliveryDate, normalizeOrderDetails, type Job } from '@glaszetter/shared';
+import { formatDeliveryDate, normalizeOrderDetails, type Job, type Supplier } from '@glaszetter/shared';
 import { updateJob } from '../../../lib/jobs';
 import { useUnsavedWarning } from '../../../hooks/useUnsavedWarning';
 
-export function OrderDetails({ job, onSaved, onEditingChange }: { job: Job; onSaved: (job: Job) => void; onEditingChange: (id: string, dirty: boolean, busy: boolean) => void }) {
+export function OrderDetails({ job, suppliers = [], onSaved, onEditingChange }: { job: Job; suppliers?: Supplier[]; onSaved: (job: Job) => void; onEditingChange: (id: string, dirty: boolean, busy: boolean) => void }) {
   const [editing, setEditing] = useState(false);
   const [number, setNumber] = useState(job.orderNumber ?? '');
   const [supplier, setSupplier] = useState(job.supplierName ?? '');
@@ -35,6 +35,7 @@ export function OrderDetails({ job, onSaved, onEditingChange }: { job: Job; onSa
       <fieldset disabled={busy}><legend>Bestelgegevens wijzigen</legend>
         <label htmlFor={`number-${job.id}`}>Bestelnummer<input id={`number-${job.id}`} value={number} maxLength={60} onChange={e => setNumber(e.target.value)} placeholder="Automatisch bij opslaan" /></label>
         <label htmlFor={`supplier-${job.id}`}>Leverancier<input id={`supplier-${job.id}`} value={supplier} maxLength={200} onChange={e => setSupplier(e.target.value)} placeholder="Naam leverancier" /></label>
+        {!!suppliers.length && <div className="urgent-actions" role="group" aria-label="Vaste glasleverancier kiezen">{suppliers.map(value => <button type="button" key={value.id} className="sapphire-button sapphire-button-secondary" aria-pressed={supplier === value.name} onClick={() => setSupplier(value.name)}>{value.name}</button>)}</div>}
         <label htmlFor={`delivery-${job.id}`}>Verwachte leverdatum<input id={`delivery-${job.id}`} type="date" min="0001-01-01" max="9999-12-31" value={date} onChange={e => setDate(e.target.value)} /></label>
         <p>Laat het bestelnummer leeg om automatisch te nummeren. Een bestaand nummer blijft behouden. Leverancier en leverdatum kun je leegmaken.</p>
         <div className="urgent-actions"><button type="submit" className="sapphire-button">{busy ? 'Opslaan…' : 'Opslaan'}</button><button type="button" className="sapphire-button sapphire-button-secondary" onClick={cancel}>Annuleren</button></div>

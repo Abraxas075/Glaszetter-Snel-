@@ -13,6 +13,8 @@ export async function assertDatabaseReady(db: Queryable): Promise<void> {
     'jobs.team_id': 'uuid', 'jobs.scheduled_date': 'date',
     'jobs.order_number': 'text', 'jobs.supplier_name': 'text', 'jobs.delivery_date': 'date',
     'order_number_counters.company_id': 'uuid', 'order_number_counters.year': 'int4', 'order_number_counters.last_number': 'int8',
+    'suppliers.id':'uuid', 'suppliers.company_id':'uuid', 'suppliers.name':'text', 'suppliers.phone':'text',
+    'suppliers.email':'text', 'suppliers.website':'text',
     'meetbons.revision': 'uuid', 'meetbons.job_id': 'uuid', 'meetbons.data': 'jsonb', 'meetbons.updated_at': 'timestamptz',
     'elements.job_id': 'uuid', 'measurements.job_id': 'uuid', 'photos.job_id': 'uuid',
     'quotes.job_id': 'uuid', 'invoices.job_id': 'uuid',

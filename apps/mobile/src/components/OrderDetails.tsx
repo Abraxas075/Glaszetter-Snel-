@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, Text, TextInput, View } from 'react-native';
-import { formatDeliveryDate, normalizeOrderDetails, parseDutchDeliveryDate, type Job } from '@glaszetter/shared';
+import { formatDeliveryDate, normalizeOrderDetails, parseDutchDeliveryDate, type Job, type Supplier } from '@glaszetter/shared';
 import { apiRequest } from '../api/client';
 import { sapphireStyles as s } from './SapphireScreen';
 import { sapphire } from '../constants/sapphire';
 
-export function OrderDetails({ job, token, onSaved, onEditingChange }: { job: Job; token: string; onSaved: (job: Job) => void; onEditingChange: (id: string, dirty: boolean, busy: boolean) => void }) {
+export function OrderDetails({ job, token, suppliers = [], onSaved, onEditingChange }: { job: Job; token: string; suppliers?: Supplier[]; onSaved: (job: Job) => void; onEditingChange: (id: string, dirty: boolean, busy: boolean) => void }) {
   const [editing, setEditing] = useState(false), [busy, setBusy] = useState(false);
   const [number, setNumber] = useState(job.orderNumber ?? '');
   const [supplier, setSupplier] = useState(job.supplierName ?? '');
@@ -34,6 +34,7 @@ export function OrderDetails({ job, token, onSaved, onEditingChange }: { job: Jo
     {editing ? <>
       <Text style={s.text}>Bestelnummer</Text><TextInput accessibilityLabel="Bestelnummer" style={input} value={number} maxLength={60} editable={!busy} onChangeText={setNumber} placeholder="Automatisch bij opslaan" placeholderTextColor={sapphire.muted} autoCorrect={false} autoCapitalize="characters" />
       <Text style={s.text}>Leverancier</Text><TextInput accessibilityLabel="Leverancier" style={input} value={supplier} maxLength={200} editable={!busy} onChangeText={setSupplier} placeholder="Naam leverancier" placeholderTextColor={sapphire.muted} />
+      {suppliers.map(value => <Pressable key={value.id} accessibilityRole="button" accessibilityState={{selected:supplier === value.name}} disabled={busy} style={s.action} onPress={() => setSupplier(value.name)}><Text style={s.actionText}>{supplier === value.name ? '✓ ' : ''}{value.name}</Text></Pressable>)}
       <Text style={s.text}>Verwachte leverdatum (DD-MM-JJJJ)</Text><TextInput accessibilityLabel="Verwachte leverdatum" style={input} value={date} maxLength={10} editable={!busy} onChangeText={setDate} placeholder="Bijvoorbeeld 21-10-2026" placeholderTextColor={sapphire.muted} autoCorrect={false} />
       <Text style={s.muted}>Laat het bestelnummer leeg om automatisch te nummeren. Een bestaand nummer blijft behouden. Leverancier en leverdatum kun je leegmaken.</Text>
       <Pressable accessibilityRole="button" disabled={busy} style={s.action} onPress={() => void save()}><Text style={s.actionText}>{busy ? 'Opslaan…' : 'Opslaan'}</Text></Pressable>

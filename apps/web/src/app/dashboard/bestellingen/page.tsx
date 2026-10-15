@@ -6,7 +6,9 @@ import { loadOrderJobs, ORDER_JOB_LABELS, type Job, type OrderJobStatus, type Pa
 import { OrderPdfButton } from './OrderPdfButton';
 import { OrderDetails } from './OrderDetails';
 import { apiRequest } from '../../../lib/api';
+import { SupplierDirectory, useSuppliers } from './Suppliers';
 export default function OrdersPage() {
+  const supplierDirectory = useSuppliers();
   const [editorVersion, setEditorVersion] = useState(0);
   const edits = useRef(new Map<string, { dirty: boolean; busy: boolean }>());
   const onEditingChange = useCallback((id: string, dirty: boolean, busy: boolean) => {
@@ -32,6 +34,7 @@ export default function OrdersPage() {
   const visible = jobs.filter(job => filter === 'all' || job.status === filter);
   return <section>
     <div className="urgent-heading"><div><h1 className="sapphire-title">Bestellingen</h1><p>Bestelde klussen en verwachte leveringen. Open een klus om de gegevens te bekijken.</p></div><button type="button" className="sapphire-button sapphire-button-secondary" disabled={loading} onClick={() => confirmLeave(() => void load())}>Vernieuwen</button></div>
+    <SupplierDirectory {...supplierDirectory} />
     <div className="urgent-filters" role="group" aria-label="Bestellingstatus">
       {(['all','ordered','delivery_expected'] as const).map(status => <button key={status} type="button" className="glass-panel urgent-filter" aria-pressed={filter === status} onClick={() => confirmLeave(() => setFilter(status))}>{status === 'all' ? 'Alle' : ORDER_JOB_LABELS[status]} <strong>{loading || error ? '—' : jobs.filter(job => status === 'all' || job.status === status).length}</strong></button>)}
     </div>
@@ -41,7 +44,7 @@ export default function OrdersPage() {
     {!loading && !error && visible.map(job => <article key={job.id} className="glass-panel urgent-card">
       <div className="urgent-card-heading"><h2>{job.name}</h2><span>{ORDER_JOB_LABELS[job.status as OrderJobStatus]}</span></div>
       {job.notes && <p className="urgent-description">{job.notes}</p>}
-      <OrderDetails key={`${job.id}-${editorVersion}`} job={job} onEditingChange={onEditingChange} onSaved={saved => setJobs(current => current.map(value => value.id === saved.id ? saved : value))} />
+      <OrderDetails key={`${job.id}-${editorVersion}`} job={job} suppliers={supplierDirectory.suppliers} onEditingChange={onEditingChange} onSaved={saved => setJobs(current => current.map(value => value.id === saved.id ? saved : value))} />
       <OrderPdfButton jobId={job.id} canExport={() => !edits.current.has(job.id)} />
       <Link className="sapphire-button" href={`/dashboard/jobs/${job.id}` as Route}>Klus openen</Link>
     </article>)}

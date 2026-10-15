@@ -16,6 +16,7 @@ import { companiesRouter } from './routes/companies';
 import { quotesRouter } from './routes/quotes';
 import { invoicesRouter } from './routes/invoices';
 import { publicQuotesRouter } from './routes/publicQuotes';
+import { suppliersRouter } from './routes/suppliers';
 
 const app: Express = express();
 
@@ -51,6 +52,7 @@ app.use('/api/v1/companies', companiesRouter);
 app.use('/api/v1/quotes', quotesRouter);
 app.use('/api/v1/invoices', invoicesRouter);
 app.use('/api/v1/public/quotes', publicQuotesRouter);
+app.use('/api/v1/suppliers', suppliersRouter);
 
 // Error handling
 interface HttpError extends Error {

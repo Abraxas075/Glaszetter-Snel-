@@ -14,6 +14,7 @@
     "migrate:down": "node-pg-migrate down",
     "seed": "tsx src/db/seed.ts",
     "bootstrap:owner": "node dist/db/bootstrapOwner.js",
+    "recover:owner": "node dist/db/recoverOwner.js",
     "seed:test": "tsx src/db/seedTest.ts"
   },
   "dependencies": {

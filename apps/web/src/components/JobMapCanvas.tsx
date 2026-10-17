@@ -66,15 +66,38 @@ export default function JobMapCanvas({ points }: { points: MapPoint[] }) {
         }
         content.append(card);
       });
+      (point.suppliers ?? []).forEach((supplier) => {
+        const card = document.createElement('p');
+        const title = document.createElement('strong');
+        title.textContent = supplier.name;
+        card.append(title);
+        const links = googleMapsLinks(supplier);
+        if (links) {
+          card.append(document.createElement('br'));
+          const route = document.createElement('a');
+          route.href = links.route;
+          route.target = '_blank';
+          route.rel = 'noopener noreferrer';
+          route.textContent = 'Route naar leverancier';
+          card.append(route);
+        }
+        content.append(card);
+      });
       L.circleMarker([point.location.lat, point.location.lon], {
         radius: point.jobs.length > 1 ? 12 : 9,
         color: '#075da4',
-        fillColor: point.jobs.length > 1 ? '#E30613' : '#00A0E6',
+        fillColor: point.suppliers?.length
+          ? point.jobs.length
+            ? '#8051d4'
+            : '#19824a'
+          : point.jobs.length > 1
+            ? '#E30613'
+            : '#00A0E6',
         fillOpacity: 0.9,
         weight: 2,
       })
         .bindPopup(content, { maxHeight: 260 })
-        .bindTooltip(`${point.jobs.length} ${point.jobs.length === 1 ? 'klus' : 'klussen'}`)
+        .bindTooltip(`${point.jobs.length} klussen, ${point.suppliers?.length ?? 0} leveranciers`)
         .addTo(group);
     });
     if (points.length) instance.fitBounds(group.getBounds(), { padding: [30, 30], maxZoom: 15 });

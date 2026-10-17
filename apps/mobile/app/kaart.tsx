@@ -1,4 +1,2 @@
-import { DashboardScreen } from '../src/screens/DashboardScreen';
-export default function Screen() {
-  return <DashboardScreen mode="kaart" />;
-}
+import { JobMapScreen } from '../src/screens/JobMapScreen';
+export default function Screen() { return <JobMapScreen />; }

@@ -9,3 +9,6 @@ export * from './orderJobs';
 export * from './suppliers';
 
 export * from './googleMaps';
+
+export * from './jobMap';
+export * from './mapPlanning';

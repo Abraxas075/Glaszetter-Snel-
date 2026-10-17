@@ -3,16 +3,20 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import type { Route } from 'next';
-import type { Project } from '@glaszetter/shared';
-import { GoogleMapsActions } from '../../../components/GoogleMapsActions';
 import {
-  filterMapJobs,
-  geocodeProject,
-  groupMapPoints,
-  loadMapJobs,
-  type GeoLocation,
-  type MapJob,
-} from '../../../lib/jobMap';
+  loadMapDirectory,
+  locateMapDirectory,
+  planningMatches,
+  amsterdamDay,
+  supplierLocationKey,
+  type MapDirectory,
+  type RouteStop,
+  type MapDay,
+} from '@glaszetter/shared';
+import { apiRequest } from '../../../lib/api';
+import { DayRoute } from '../../../components/DayRoute';
+import { GoogleMapsActions } from '../../../components/GoogleMapsActions';
+import { filterMapJobs, groupMapPoints, type GeoLocation } from '../../../lib/jobMap';
 import { JOB_STATUSES, JOB_STATUS_LABELS } from '../../../constants/statusLabels';
 import { pageStyles, formStyles } from '../../../styles/shared';
 const JobMapCanvas = dynamic(() => import('../../../components/JobMapCanvas'), {
@@ -21,8 +25,28 @@ const JobMapCanvas = dynamic(() => import('../../../components/JobMapCanvas'), {
 });
 
 export default function JobMapPage() {
-  const [jobs, setJobs] = useState<MapJob[]>([]),
-    [loading, setLoading] = useState(true),
+  const [directory, setDirectory] = useState<MapDirectory>({
+    jobs: [],
+    teams: [],
+    employees: [],
+    suppliers: [],
+    warnings: [],
+  });
+  const jobs = directory.jobs;
+  const [employee, setEmployee] = useState(''),
+    [day, setDay] = useState<MapDay>('all'),
+    [showSuppliers, setShowSuppliers] = useState(true);
+  const [stops, setStops] = useState<RouteStop[]>([]),
+    [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 30000);
+    return () => clearInterval(timer);
+  }, []);
+  const todayKey = amsterdamDay(now);
+  const filterNow = useMemo(() => new Date(`${todayKey}T12:00:00Z`), [todayKey]);
+  const dateKey = amsterdamDay(filterNow, day === 'tomorrow' ? 1 : 0);
+  useEffect(() => setStops([]), [dateKey, day, employee]);
+  const [loading, setLoading] = useState(true),
     [error, setError] = useState('');
   const [locations, setLocations] = useState<Record<string, GeoLocation | null>>({});
   const [geoBusy, setGeoBusy] = useState(false),
@@ -38,11 +62,20 @@ export default function JobMapPage() {
     let active = true;
     setLoading(true);
     setError('');
-    setJobs([]);
+    setDirectory({ jobs: [], teams: [], employees: [], suppliers: [], warnings: [] });
+    setStops([]);
     setLocations({});
-    loadMapJobs()
+    loadMapDirectory(apiRequest)
       .then((data) => {
-        if (active) setJobs(data);
+        if (active) {
+          setDirectory(data);
+          setEmployee((current) =>
+            data.employees.some((user) => user.id === current) &&
+            !data.warnings.some((w) => w.startsWith('Teams'))
+              ? current
+              : ''
+          );
+        }
       })
       .catch(() => {
         if (active) setError('Klussen en adressen laden is mislukt.');
@@ -58,58 +91,74 @@ export default function JobMapPage() {
     if (loading || error) return;
     const controller = new AbortController();
     let active = true;
-    const projects = [
-      ...new Map(
-        jobs
-          .filter((item) => item.destination && item.project?.city?.trim())
-          .map((item) => [item.project!.id, item.project!])
-      ).values(),
-    ];
     setGeoBusy(true);
     setGeoError(false);
     setProgress(0);
     setLocations({});
     void (async () => {
-      const result: Record<string, GeoLocation | null> = {};
-      let consecutiveFailures = 0;
-      // One request at a time and per-page cache avoid repeated address lookups for the same project.
-      for (let i = 0; i < projects.length; i++) {
-        if (controller.signal.aborted) return;
-        const project: Project = projects[i];
-        const key = `${project.address}|${project.city}`;
-        try {
-          if (!cache.current.has(key))
-            cache.current.set(key, await geocodeProject(project, controller.signal));
-          result[project.id] = cache.current.get(key) ?? null;
-          consecutiveFailures = 0;
-        } catch {
-          if (controller.signal.aborted) return;
-          result[project.id] = null;
-          if (active) setGeoError(true);
-          if (++consecutiveFailures >= 3) break;
-        }
-        if (active) setProgress(i + 1);
-      }
+      const result = await locateMapDirectory(
+        directory,
+        controller.signal,
+        (count) => {
+          if (active) setProgress(count);
+        },
+        cache.current
+      );
       if (active) {
-        setLocations(result);
+        setLocations(result.locations);
+        setGeoError(result.failed);
         setGeoBusy(false);
       }
-    })();
+    })().catch(() => {
+      if (active && !controller.signal.aborted) {
+        setGeoError(true);
+        setGeoBusy(false);
+      }
+    });
     return () => {
       active = false;
       controller.abort();
     };
-  }, [jobs, loading, error, geoReload]);
+  }, [directory, loading, error, geoReload]);
   const filtered = useMemo(
-    () => filterMapJobs(jobs, search, status, city),
-    [jobs, search, status, city]
+    () =>
+      filterMapJobs(jobs, search, status, city).filter((item) =>
+        planningMatches(item.job, employee, directory.teams, day, filterNow)
+      ),
+    [jobs, search, status, city, employee, directory.teams, day, filterNow]
   );
-  const points = useMemo(() => groupMapPoints(filtered, locations), [filtered, locations]);
+  const vendors = useMemo(
+    () =>
+      showSuppliers
+        ? directory.suppliers.filter(
+            (supplier) =>
+              (!city || supplier.city?.trim() === city) &&
+              (!search ||
+                [supplier.name, supplier.address, supplier.city]
+                  .join(' ')
+                  .toLocaleLowerCase('nl-NL')
+                  .includes(search.trim().toLocaleLowerCase('nl-NL')))
+          )
+        : [],
+    [showSuppliers, directory.suppliers, city, search]
+  );
+  const points = useMemo(
+    () => groupMapPoints(filtered, locations, vendors),
+    [filtered, locations, vendors]
+  );
+  function addStop(stop: RouteStop) {
+    setStops((current) =>
+      current.some((item) => item.key === stop.key) ? current : [...current, stop]
+    );
+  }
   const mapped = filtered.filter((item) => !!locations[item.project?.id ?? '']);
   const unmapped = filtered.filter((item) => !locations[item.project?.id ?? '']);
   const cities = [
     ...new Set(
-      jobs.map((item) => item.project?.city?.trim()).filter((value): value is string => !!value)
+      [
+        ...jobs.map((item) => item.project?.city?.trim()),
+        ...directory.suppliers.map((supplier) => supplier.city?.trim()),
+      ].filter((value): value is string => !!value)
     ),
   ].sort((a, b) => a.localeCompare(b, 'nl'));
   return (
@@ -127,7 +176,8 @@ export default function JobMapPage() {
       </div>
       <p>
         Bekijk alle klussen en open een klus of een route in Google Maps. Blauwe markers tonen één
-        klus; rode markers bevatten meerdere klussen op dezelfde locatie.
+        klus; rode markers bevatten meerdere klussen. Groen toont leveranciers, paars een
+        combinatie.
       </p>
       {loading && <p role="status">Alle klussen en adressen laden…</p>}
       {error && <p role="alert">{error}</p>}
@@ -174,6 +224,44 @@ export default function JobMapPage() {
                 ))}
               </select>
             </label>
+            <label>
+              Medewerker (via team)
+              <select
+                style={formStyles.select}
+                value={employee}
+                disabled={directory.warnings.some(
+                  (w) => w.startsWith('Teams') || w.startsWith('Medewerkers')
+                )}
+                onChange={(e) => setEmployee(e.target.value)}
+              >
+                <option value="">Alle medewerkers</option>
+                {directory.employees.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Dag
+              <select
+                style={formStyles.select}
+                value={day}
+                onChange={(e) => setDay(e.target.value as MapDay)}
+              >
+                <option value="all">Alle dagen</option>
+                <option value="today">Vandaag</option>
+                <option value="tomorrow">Morgen</option>
+              </select>
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={showSuppliers}
+                onChange={(e) => setShowSuppliers(e.target.checked)}
+              />{' '}
+              Leveranciers tonen
+            </label>
             <button
               type="button"
               className="sapphire-button sapphire-button-secondary"
@@ -181,11 +269,22 @@ export default function JobMapPage() {
                 setSearch('');
                 setStatus('');
                 setCity('');
+                setEmployee('');
+                setDay('all');
               }}
             >
               Filters wissen
             </button>
           </div>
+          {directory.warnings.map((warning) => (
+            <p key={warning} role="alert">
+              {warning} Kies Vernieuwen om opnieuw te laden.
+            </p>
+          ))}
+          <p>
+            Medewerkers worden gefilterd via het toegewezen team. Vandaag en morgen volgen de tijd
+            in Nederland.
+          </p>
           <p role="status">
             {filtered.length} van {jobs.length} klussen
             {geoBusy
@@ -193,6 +292,7 @@ export default function JobMapPage() {
               : ` — ${mapped.length} op de kaart, ${unmapped.length} zonder kaartpositie`}
           </p>
           <JobMapCanvas points={points} />
+          <DayRoute stops={stops} onChange={setStops} enabled={day !== 'all'} />
           <p className="meetbon-description">
             Kaart: OpenStreetMap. Nederlandse adressen worden opgezocht via PDOK. Alleen straat en
             plaats worden hiervoor gebruikt. Zonder huisnummer tonen we een straatpositie.
@@ -216,6 +316,43 @@ export default function JobMapPage() {
             </p>
           )}
           {!filtered.length && <p>Geen klussen voor deze filters.</p>}
+          {showSuppliers && (
+            <>
+              <h2>Leveranciers ({vendors.length})</h2>
+              <div className="job-map-list">
+                {vendors.map((supplier) => (
+                  <article key={supplier.id} className="glass-panel urgent-card">
+                    <h3>{supplier.name}</h3>
+                    <p>
+                      {locations[supplierLocationKey(supplier.id)]
+                        ? 'Op de kaart'
+                        : 'Geen kaartpositie gevonden'}
+                    </p>
+                    <GoogleMapsActions location={supplier} />
+                    <button
+                      type="button"
+                      className="sapphire-button sapphire-button-secondary"
+                      disabled={
+                        day === 'all' ||
+                        !supplier.address?.trim() ||
+                        stops.some((stop) => stop.key === supplierLocationKey(supplier.id))
+                      }
+                      onClick={() =>
+                        addStop({
+                          key: supplierLocationKey(supplier.id),
+                          label: supplier.name,
+                          location: supplier,
+                        })
+                      }
+                    >
+                      Aan dagroute toevoegen
+                    </button>
+                  </article>
+                ))}
+              </div>
+            </>
+          )}
+
           <h2>Klussen met kaartpositie</h2>
           <div className="job-map-list">
             {mapped.map((item) => (
@@ -230,6 +367,20 @@ export default function JobMapPage() {
                     : 'Adresniveau'}
                 </p>
                 <GoogleMapsActions location={item.project} />
+                <button
+                  type="button"
+                  className="sapphire-button sapphire-button-secondary"
+                  disabled={
+                    day === 'all' ||
+                    !item.destination ||
+                    stops.some((stop) => stop.key === item.job.id)
+                  }
+                  onClick={() =>
+                    addStop({ key: item.job.id, label: item.job.name, location: item.project! })
+                  }
+                >
+                  Aan dagroute toevoegen
+                </button>
               </article>
             ))}
           </div>
@@ -251,6 +402,20 @@ export default function JobMapPage() {
                         : 'Geen eenduidige Nederlandse kaartpositie gevonden.'}
                 </p>
                 <GoogleMapsActions location={item.project} />
+                <button
+                  type="button"
+                  className="sapphire-button sapphire-button-secondary"
+                  disabled={
+                    day === 'all' ||
+                    !item.destination ||
+                    stops.some((stop) => stop.key === item.job.id)
+                  }
+                  onClick={() =>
+                    addStop({ key: item.job.id, label: item.job.name, location: item.project! })
+                  }
+                >
+                  Aan dagroute toevoegen
+                </button>
               </article>
             ))}
           </div>

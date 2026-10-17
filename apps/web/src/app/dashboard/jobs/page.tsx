@@ -74,6 +74,7 @@ export default function JobsPage() {
     <div>
       <div style={pageStyles.headerRow}>
         <h1 style={pageStyles.title}>Klussen</h1>
+        <Link href={'/dashboard/kaart' as Route} className="sapphire-button sapphire-button-secondary">Klussen op de kaart</Link>
         <button style={pageStyles.primaryButton} onClick={() => setShowForm((v) => !v)}>
           {showForm ? 'Annuleren' : '+ Nieuwe klus'}
         </button>

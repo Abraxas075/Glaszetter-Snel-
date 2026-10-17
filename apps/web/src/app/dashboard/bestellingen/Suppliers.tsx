@@ -1,4 +1,5 @@
 'use client';
+import { GoogleMapsActions } from '../../../components/GoogleMapsActions';
 import { useCallback, useEffect, useState } from 'react';
 import { supplierLinks, type Supplier } from '@glaszetter/shared';
 import { apiRequest } from '../../../lib/api';
@@ -28,7 +29,7 @@ export function SupplierDirectory({suppliers, loading, error, load}: ReturnType<
         const links = supplierLinks(supplier);
         return <article key={supplier.id} className="urgent-card">
           <h3>{supplier.name}</h3>
-          <p>{supplier.address}<br />{[supplier.postalCode,supplier.city].filter(Boolean).join(' ')}</p>
+          <GoogleMapsActions location={supplier} />
           {supplier.contactPerson && <p>{supplier.contactPerson}</p>}
           {supplier.phone && <p>{supplier.phone}</p>}
           {supplier.email && <p>{supplier.email}</p>}

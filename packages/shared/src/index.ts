@@ -7,3 +7,5 @@ export * from './meetbonMerge';
 
 export * from './orderJobs';
 export * from './suppliers';
+
+export * from './googleMaps';

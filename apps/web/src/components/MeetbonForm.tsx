@@ -1,9 +1,11 @@
 'use client';
+import { GoogleMapsActions } from './GoogleMapsActions';
+import { meetbonMapLocation, type MapLocation } from '@glaszetter/shared';
 import { useEffect, useRef, useState } from 'react';
 import { hasMeetbonChanges, compareMeetbons, resolveMeetbonComparison, type MeetbonComparison, emptyMeetbon, isMeetbon, MEETBON_SECTIONS, type Meetbon } from '@glaszetter/shared';
 import { ApiError, apiRequest, fetchBlob } from '../lib/api';
 import { formStyles, pageStyles } from '../styles/shared';
-export function MeetbonForm({ jobId }: { jobId: string }) {
+export function MeetbonForm({ jobId, project, projectLoading, projectError, onRetryProject }: { jobId: string; project?: MapLocation | null; projectLoading?: boolean; projectError?: string; onRetryProject?: () => void }) {
   const formRef = useRef<HTMLFormElement>(null);
   function setSectionsExpanded(expanded: boolean) {
     formRef.current?.querySelectorAll<HTMLDetailsElement>('.meetbon-disclosure').forEach(section => { section.open = expanded; });
@@ -87,8 +89,10 @@ export function MeetbonForm({ jobId }: { jobId: string }) {
     if (!loaded || busy || !!comparison) return;
     if (window.confirm('Meetbon verwijderen? De opgeslagen meetbon en niet-opgeslagen invoer in dit scherm worden verwijderd. Klus, inmetingen en foto’s blijven behouden.')) void removeBon();
   }
+  const enteredLocation = meetbonMapLocation(data.fields);
   return <section className="meetbon-section">
     <h2 style={pageStyles.title}>Digitale meetbon</h2>
+    {loaded && <><p className="meetbon-description">Adres uit de meetbon; bij een lege adressectie gebruiken we het klusadres.</p><GoogleMapsActions location={enteredLocation ?? project} loading={!enteredLocation && projectLoading} error={enteredLocation ? undefined : projectError} onRetry={onRetryProject} /></>}
     <a href="/templates/Meetbon_Glaszettersnel_digitaal.xlsx" download>Originele Excel-meetbon downloaden</a>
     <p className="meetbon-description">Gebaseerd op je meetbon. Alle glasmaten zijn in mm. Opgeslagen ruiten in deze bon staan los van de ingemeten elementen.</p>
     <p className="meetbon-description">Meetbon opslaan bewaart de bon online bij deze klus. Voor een bestand op je toestel kies je Opslaan en PDF downloaden.</p>

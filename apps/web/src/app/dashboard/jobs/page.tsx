@@ -1,10 +1,11 @@
 'use client';
 
+import { GoogleMapsActions } from '../../../components/GoogleMapsActions';
 import { useEffect, useState } from 'react';
 import type { Route } from 'next';
 import Link from 'next/link';
 import type { Job, Project } from '@glaszetter/shared';
-import { listProjects } from '../../../lib/projects';
+import { listAllProjects } from '../../../lib/projects';
 import { createJob, listJobs } from '../../../lib/jobs';
 import { ApiError } from '../../../lib/api';
 import { JOB_STATUS_LABELS } from '../../../constants/statusLabels';
@@ -13,6 +14,9 @@ import { pageStyles, formStyles } from '../../../styles/shared';
 export default function JobsPage() {
   const [jobs, setJobs] = useState<Job[] | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [projectsLoading, setProjectsLoading] = useState(true);
+  const [projectsError, setProjectsError] = useState('');
+  const [projectsReload, setProjectsReload] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
 
@@ -29,10 +33,17 @@ export default function JobsPage() {
 
   useEffect(() => {
     load();
-    listProjects()
-      .then((result) => setProjects(result.data))
-      .catch(() => {});
+
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    setProjects([]); setProjectsLoading(true); setProjectsError('');
+    listAllProjects().then(result => { if (active) setProjects(result); })
+      .catch(() => { if (active) setProjectsError('Adres laden is mislukt.'); })
+      .finally(() => { if (active) setProjectsLoading(false); });
+    return () => { active = false; };
+  }, [projectsReload]);
 
   const projectName = (id: string) => projects.find((p) => p.id === id)?.name ?? '—';
 
@@ -121,6 +132,7 @@ export default function JobsPage() {
               <th style={pageStyles.th}>Naam</th>
               <th style={pageStyles.th}>Project</th>
               <th style={pageStyles.th}>Status</th>
+              <th style={pageStyles.th}>Adres en route</th>
             </tr>
           </thead>
           <tbody>
@@ -133,6 +145,7 @@ export default function JobsPage() {
                 </td>
                 <td style={pageStyles.td}>{projectName(job.projectId)}</td>
                 <td style={pageStyles.td}>{JOB_STATUS_LABELS[job.status]}</td>
+                <td style={pageStyles.td}><GoogleMapsActions location={projects.find(project => project.id === job.projectId)} loading={projectsLoading} error={projectsError} onRetry={() => setProjectsReload(value => value + 1)} /></td>
               </tr>
             ))}
           </tbody>

@@ -1,5 +1,6 @@
 'use client';
 
+import { GoogleMapsActions } from '../../../../components/GoogleMapsActions';
 import { MeetbonForm } from '../../../../components/MeetbonForm';
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -23,6 +24,9 @@ export default function JobDetailPage() {
 
   const [job, setJob] = useState<Job | null>(null);
   const [project, setProject] = useState<Project | null>(null);
+  const [projectLoading, setProjectLoading] = useState(true);
+  const [projectError, setProjectError] = useState('');
+  const [projectReload, setProjectReload] = useState(0);
   const [elements, setElements] = useState<Element[] | null>(null);
   const [jobPhotos, setJobPhotos] = useState<Photo[]>([]);
   const [elementPhotoCounts, setElementPhotoCounts] = useState<Record<string, number>>({});
@@ -41,17 +45,19 @@ export default function JobDetailPage() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
+    let active = true;
+    setJob(null); setProject(null); setProjectError(''); setProjectLoading(true); setError(null);
     getJob(jobId)
       .then((j) => {
+        if (!active) return;
         setJob(j);
         setName(j.name);
         setStatus(j.status);
         setTeamId(j.teamId ?? '');
         setScheduledDate(j.scheduledDate ? String(j.scheduledDate).slice(0, 10) : '');
         setNotes(j.notes ?? '');
-        getProject(j.projectId).then(setProject).catch(() => {});
       })
-      .catch(() => setError('Kon klus niet laden.'));
+      .catch(() => { if (active) setError('Kon klus niet laden.'); });
 
     listTeams()
       .then(setTeams)
@@ -70,7 +76,19 @@ export default function JobDetailPage() {
       .catch(() => {});
 
     listPhotos({ jobId }).then(setJobPhotos).catch(() => {});
+    return () => { active = false; };
   }, [jobId]);
+
+  const locationProjectId = job?.projectId;
+  useEffect(() => {
+    let active = true;
+    setProject(null); setProjectError(''); setProjectLoading(true);
+    if (!locationProjectId) return;
+    getProject(locationProjectId).then(value => { if (active) setProject(value); })
+      .catch(() => { if (active) setProjectError('Adres laden is mislukt.'); })
+      .finally(() => { if (active) setProjectLoading(false); });
+    return () => { active = false; };
+  }, [locationProjectId, projectReload]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,7 +117,7 @@ export default function JobDetailPage() {
   };
 
   const handleDelete = async () => {
-    if (!job) return;
+    if (!job || job.id !== jobId) return;
     if (!window.confirm(`Klus "${job.name}" definitief verwijderen?`)) return;
 
     setDeleteError(null);
@@ -114,7 +132,7 @@ export default function JobDetailPage() {
   };
 
   if (error) return <p style={pageStyles.error}>{error}</p>;
-  if (!job) return <p style={pageStyles.empty}>Laden...</p>;
+  if (!job || job.id !== jobId) return <p style={pageStyles.empty}>Laden...</p>;
 
   return (
     <div>
@@ -130,6 +148,8 @@ export default function JobDetailPage() {
           </Link>
         </p>
       )}
+
+      <GoogleMapsActions location={project} loading={projectLoading} error={projectError} onRetry={() => setProjectReload(value => value + 1)} />
 
       <form onSubmit={handleSave} style={{ ...formStyles.card, marginTop: 'var(--spacing-lg)' }}>
         <label style={formStyles.label} htmlFor="name">
@@ -194,7 +214,7 @@ export default function JobDetailPage() {
         </button>
       </form>
 
-      <MeetbonForm jobId={jobId} />
+      <MeetbonForm jobId={jobId} project={project} projectLoading={projectLoading} projectError={projectError} onRetryProject={() => setProjectReload(value => value + 1)} />
 
       <h2 style={{ ...pageStyles.title, fontSize: 18, marginTop: 'var(--spacing-xxl)' }}>
         Klusfoto's

@@ -1,5 +1,6 @@
 'use client';
 
+import { GoogleMapsActions } from '../../../components/GoogleMapsActions';
 import { useEffect, useState } from 'react';
 import type { Route } from 'next';
 import Link from 'next/link';
@@ -169,6 +170,7 @@ export default function CustomersPage() {
               <th style={pageStyles.th}>Naam</th>
               <th style={pageStyles.th}>E-mail</th>
               <th style={pageStyles.th}>Plaats</th>
+              <th style={pageStyles.th}>Adres en route</th>
             </tr>
           </thead>
           <tbody>
@@ -184,6 +186,7 @@ export default function CustomersPage() {
                 </td>
                 <td style={pageStyles.td}>{customer.email ?? '—'}</td>
                 <td style={pageStyles.td}>{customer.city ?? '—'}</td>
+                <td style={pageStyles.td}><GoogleMapsActions location={customer} /></td>
               </tr>
             ))}
           </tbody>

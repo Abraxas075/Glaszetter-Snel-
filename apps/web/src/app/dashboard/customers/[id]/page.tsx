@@ -1,5 +1,6 @@
 'use client';
 
+import { GoogleMapsActions } from '../../../../components/GoogleMapsActions';
 import { useEffect, useState } from 'react';
 import type { Route } from 'next';
 import Link from 'next/link';
@@ -33,8 +34,11 @@ export default function CustomerDetailPage() {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
+    let active = true;
+    setError(null);
     getCustomer(customerId)
       .then((result) => {
+        if (!active) return;
         setCustomer(result);
         setName(result.name);
         setEmail(result.email ?? '');
@@ -45,11 +49,12 @@ export default function CustomerDetailPage() {
         setCountry(result.country ?? '');
         setTaxId(result.taxId ?? '');
       })
-      .catch(() => setError('Kon klant niet laden.'));
+      .catch(() => { if (active) setError('Kon klant niet laden.'); });
 
     listProjects()
-      .then((result) => setProjects(result.data.filter((project) => project.customerId === customerId)))
-      .catch(() => setProjects([]));
+      .then((result) => { if (active) setProjects(result.data.filter((project) => project.customerId === customerId)); })
+      .catch(() => { if (active) setProjects([]); });
+    return () => { active = false; };
   }, [customerId]);
 
   const handleSave = async (event: React.FormEvent) => {
@@ -98,7 +103,7 @@ export default function CustomerDetailPage() {
   };
 
   if (error) return <p style={pageStyles.error}>{error}</p>;
-  if (!customer) return <p style={pageStyles.empty}>Laden...</p>;
+  if (!customer || customer.id !== customerId) return <p style={pageStyles.empty}>Laden...</p>;
 
   const hasProjects = (projects?.length ?? 0) > 0;
 
@@ -108,6 +113,7 @@ export default function CustomerDetailPage() {
         ← Terug naar klanten
       </Link>
       <h1 style={pageStyles.title}>{customer.name}</h1>
+      <GoogleMapsActions location={{address, postalCode, city, country}} />
 
       <form onSubmit={handleSave} style={{ ...formStyles.card, marginTop: 'var(--spacing-lg)' }}>
         <label style={formStyles.label} htmlFor="name">Naam *</label>

@@ -24,3 +24,17 @@ export const updateProject = (id: string, input: Partial<ProjectInput>): Promise
 
 export const deleteProject = (id: string): Promise<void> =>
   apiRequest<void>(`/projects/${id}`, { method: 'DELETE' });
+
+// Load every project so a job never loses its address after the first 100 projects.
+export async function listAllProjects(): Promise<Project[]> {
+  const projects: Project[] = [];
+  let page = 1;
+  let totalPages = 1;
+  do {
+    const result = await apiRequest<PaginatedResponse<Project>>(`/projects?limit=100&page=${page}`);
+    projects.push(...result.data);
+    totalPages = result.totalPages;
+    page++;
+  } while (page <= totalPages);
+  return projects;
+}

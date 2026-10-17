@@ -1,3 +1,5 @@
+import { JobMapsActions } from '../components/GoogleMapsActions';
+import { meetbonMapLocation } from '../utils/googleMaps';
 import { useEffect, useState } from 'react';
 import { Alert, Platform, ScrollView, Text, TextInput, View, Switch } from 'react-native';
 import { hasMeetbonChanges, compareMeetbons, resolveMeetbonComparison, type MeetbonComparison, emptyMeetbon, isMeetbon, MEETBON_SECTIONS, type Meetbon } from '@glaszetter/shared';
@@ -85,6 +87,7 @@ export function MeetbonScreen({ jobId }: { jobId: string }) {
   }
   return <ScrollView contentContainerStyle={{ padding: 20, gap: 12 }}>
     <Text style={{ fontSize: 24, fontWeight: 'bold' }}>Digitale meetbon</Text>
+    {loaded && <><Text>Adres uit de meetbon; bij een lege adressectie gebruiken we het klusadres.</Text><JobMapsActions jobId={jobId} override={meetbonMapLocation(data.fields)} /></>}
     <Text>Alle glasmaten in mm. Ruiten in de bon staan los van ingemeten elementen.</Text>
     <Text>Meetbon opslaan bewaart de bon online bij deze klus. Voor een bestand op je telefoon kies je Opslaan en PDF delen en sla je de PDF op via het deelmenu.</Text>
     {loaded && <Text accessibilityLiveRegion="polite">{hasUnsavedChanges ? 'Je hebt wijzigingen die nog niet online zijn opgeslagen. Sla op voordat je dit scherm verlaat.' : savedData.revision ? 'De getoonde meetbon is online opgeslagen.' : 'Er is nog geen meetbon online opgeslagen bij deze klus.'}</Text>}

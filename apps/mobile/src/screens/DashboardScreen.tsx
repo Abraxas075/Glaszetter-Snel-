@@ -1,8 +1,10 @@
+import { useProjectLocations } from '../hooks/useMapLocations';
+import { GoogleMapsActions } from '../components/GoogleMapsActions';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Pressable, Text, View } from 'react-native';
 import { Redirect, useFocusEffect, useRouter } from 'expo-router';
-import type { Customer, Job, Project } from '@glaszetter/shared';
-import { agendaJobs, customerDirectory, projectDirectory } from '../api/dashboard';
+import type { Customer, Job } from '@glaszetter/shared';
+import { agendaJobs, customerDirectory } from '../api/dashboard';
 import { useAuth } from '../contexts/AuthContext';
 import { SapphireScreen, sapphireStyles as s } from '../components/SapphireScreen';
 import { GlassPanel } from '../components/GlassPanel';
@@ -38,7 +40,7 @@ export function DashboardScreen({ mode }: { mode: Mode }) {
   const router = useRouter();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
+  const locations = useProjectLocations(mode === 'agenda' || mode === 'kaart');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
   const [reload, setReload] = useState(0);
@@ -52,17 +54,14 @@ export function DashboardScreen({ mode }: { mode: Mode }) {
       setError(false);
       setJobs([]);
       setCustomers([]);
-      setProjects([]);
       const load = async () => {
         if (mode === 'customers') {
           const data = await customerDirectory(token);
           if (active) setCustomers(data);
         } else {
           const data = await agendaJobs(token);
-          const projectData = mode === 'kaart' ? await projectDirectory(token) : [];
           if (active) {
             setJobs(data);
-            setProjects(projectData);
           }
         }
       };
@@ -92,8 +91,6 @@ export function DashboardScreen({ mode }: { mode: Mode }) {
       (job) => job.scheduledDate && scheduledDateKey(job.scheduledDate) === localDateKey(chosen)
     )
     .sort((a, b) => new Date(a.scheduledDate!).getTime() - new Date(b.scheduledDate!).getTime());
-  const address = (value: { address?: string; city?: string; postalCode?: string }) =>
-    [value.address, value.postalCode, value.city].filter(Boolean).join(', ');
   return (
     <SapphireScreen title={titles[mode]}>
       {busy && <ActivityIndicator color={sapphire.blue} />}
@@ -143,16 +140,13 @@ export function DashboardScreen({ mode }: { mode: Mode }) {
             <Text style={s.muted}>Geen klussen voor jouw team ingepland op deze dag.</Text>
           )}
           {daily.map((job) => (
-            <Pressable
-              key={job.id}
-              accessibilityRole="button"
-              onPress={() => router.push(`/jobs/${job.id}/elements`)}
-            >
-              <GlassPanel style={s.card}>
+            <GlassPanel key={job.id} style={s.card}>
+              <Pressable accessibilityRole="button" style={s.action} onPress={() => router.push(`/jobs/${job.id}/elements`)}>
                 <Text style={s.muted}>Ingepland</Text>
                 <Text style={s.title}>{job.name}</Text>
-              </GlassPanel>
-            </Pressable>
+              </Pressable>
+              <GoogleMapsActions location={locations.projects.get(job.projectId)} loading={locations.loading} error={locations.error} retry={locations.retry} dark />
+            </GlassPanel>
           ))}
         </>
       )}
@@ -165,25 +159,11 @@ export function DashboardScreen({ mode }: { mode: Mode }) {
             <Text style={s.muted}>Er zijn nog geen klussen aan jouw team toegewezen.</Text>
           )}
           {jobs.map((job) => {
-            const project = projects.find((item) => item.id === job.projectId);
-            const destination = project ? address(project) : '';
+            const project = locations.projects.get(job.projectId);
             return (
               <GlassPanel key={job.id} style={s.card}>
                 <Text style={s.title}>{job.name}</Text>
-                <Text style={s.muted}>{destination || 'Geen klusadres ingevuld.'}</Text>
-                {destination && (
-                  <Pressable
-                    accessibilityRole="button"
-                    style={s.action}
-                    onPress={() =>
-                      void openLink(
-                        `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}`
-                      )
-                    }
-                  >
-                    <Text style={s.actionText}>Start route</Text>
-                  </Pressable>
-                )}
+                <GoogleMapsActions location={project} loading={locations.loading} error={locations.error} retry={locations.retry} dark />
               </GlassPanel>
             );
           })}
@@ -195,7 +175,7 @@ export function DashboardScreen({ mode }: { mode: Mode }) {
           {customers.map((customer) => (
             <GlassPanel key={customer.id} style={s.card}>
               <Text style={s.title}>{customer.name}</Text>
-              <Text style={s.muted}>{address(customer) || 'Geen adres ingevuld.'}</Text>
+              <GoogleMapsActions location={customer} dark />
               {customer.phone && (
                 <Pressable
                   accessibilityRole="button"
@@ -212,19 +192,6 @@ export function DashboardScreen({ mode }: { mode: Mode }) {
                   onPress={() => void openLink(`mailto:${customer.email}`)}
                 >
                   <Text style={s.actionText}>{customer.email}</Text>
-                </Pressable>
-              )}
-              {address(customer) && (
-                <Pressable
-                  accessibilityRole="button"
-                  style={s.action}
-                  onPress={() =>
-                    void openLink(
-                      `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address(customer))}`
-                    )
-                  }
-                >
-                  <Text style={s.actionText}>Route</Text>
                 </Pressable>
               )}
             </GlassPanel>

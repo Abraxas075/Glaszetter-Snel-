@@ -1,3 +1,4 @@
+import { JobMapsActions } from '../components/GoogleMapsActions';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
@@ -72,6 +73,7 @@ export const ElementListScreen: React.FC<ElementListScreenProps> = ({ jobId }) =
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Ingemeten elementen</Text>
+        <JobMapsActions jobId={jobId} />
         <Button
           label="+ Nieuw element"
           onPress={() => router.push(`/jobs/${jobId}/elements/new`)}

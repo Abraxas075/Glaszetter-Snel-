@@ -1,3 +1,4 @@
+import { JobMapsActions } from '../components/GoogleMapsActions';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
@@ -245,6 +246,7 @@ export const NewMeasurementScreen: React.FC<NewMeasurementScreenProps> = ({ jobI
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.title}>{elementId ? `${code} bewerken` : 'Nieuw element inmeten'}</Text>
+        <JobMapsActions jobId={jobId} />
 
       <View style={styles.tabs} pointerEvents={isSaving ? 'none' : 'auto'}>
         <TouchableOpacity

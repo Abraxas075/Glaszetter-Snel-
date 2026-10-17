@@ -1,3 +1,5 @@
+import { GoogleMapsActions } from '../components/GoogleMapsActions';
+import { useProjectLocations } from '../hooks/useMapLocations';
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import type { Job } from '@glaszetter/shared';
@@ -9,6 +11,7 @@ import { colors, spacing, radius } from '../constants/colors';
 export const JobPickerScreen: React.FC = () => {
   const router = useRouter();
   const { token } = useAuth();
+  const locations = useProjectLocations();
   const [jobs, setJobs] = useState<Job[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,13 +44,13 @@ export const JobPickerScreen: React.FC = () => {
           keyExtractor={(job) => job.id}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.jobCard}
-              onPress={() => router.push(`/jobs/${item.id}/elements`)}
-            >
+            <View style={styles.jobCard}>
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel={`Open klus ${item.name}`} onPress={() => router.push(`/jobs/${item.id}/elements`)} style={{minHeight: 44}}>
               <Text style={styles.jobName}>{item.name}</Text>
               <Text style={styles.jobStatus}>{item.status}</Text>
-            </TouchableOpacity>
+              </TouchableOpacity>
+              <GoogleMapsActions location={locations.projects.get(item.projectId)} loading={locations.loading} error={locations.error} retry={locations.retry} />
+            </View>
           )}
         />
       )}

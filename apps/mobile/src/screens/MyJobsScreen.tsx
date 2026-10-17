@@ -1,3 +1,5 @@
+import { GoogleMapsActions } from '../components/GoogleMapsActions';
+import { useProjectLocations } from '../hooks/useMapLocations';
 import React, { useCallback, useState } from 'react';
 import {
   View,
@@ -32,6 +34,7 @@ const formatDate = (date?: Date): string => {
 export const MyJobsScreen: React.FC = () => {
   const router = useRouter();
   const { token } = useAuth();
+  const locations = useProjectLocations();
   const [jobs, setJobs] = useState<Job[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -83,13 +86,13 @@ export const MyJobsScreen: React.FC = () => {
           keyExtractor={(job) => job.id}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.jobCard}
-              onPress={() => router.push(`/jobs/${item.id}/elements`)}
-            >
+            <View style={styles.jobCard}>
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel={`Open klus ${item.name}`} onPress={() => router.push(`/jobs/${item.id}/elements`)} style={{minHeight: 44}}>
               <Text style={styles.jobName}>{item.name}</Text>
               <Text style={styles.jobDate}>{formatDate(item.scheduledDate)}</Text>
-            </TouchableOpacity>
+              </TouchableOpacity>
+              <GoogleMapsActions location={locations.projects.get(item.projectId)} loading={locations.loading} error={locations.error} retry={locations.retry} dark />
+            </View>
           )}
         />
       )}

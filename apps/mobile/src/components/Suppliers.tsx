@@ -1,3 +1,4 @@
+import { GoogleMapsActions } from './GoogleMapsActions';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Pressable, Text, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
@@ -40,7 +41,7 @@ export function SupplierDirectory({suppliers, loading, error, load}: ReturnType<
         const links = supplierLinks(supplier);
         return <View key={supplier.id} style={{gap:6,marginTop:12}}>
           <Text style={s.title}>{supplier.name}</Text>
-          <Text style={s.text}>{supplier.address}{'\n'}{[supplier.postalCode,supplier.city].filter(Boolean).join(' ')}</Text>
+          <GoogleMapsActions location={supplier} dark />
           {!!supplier.contactPerson && <Text style={s.muted}>{supplier.contactPerson}</Text>}
           {!!supplier.phone && <Text style={s.text}>{supplier.phone}</Text>}
           {!!supplier.email && <Text style={s.text}>{supplier.email}</Text>}

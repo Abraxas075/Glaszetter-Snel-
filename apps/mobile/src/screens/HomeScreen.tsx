@@ -10,10 +10,11 @@ import { MenuIcon, type MenuIconName } from '../components/MenuIcon';
 import { sapphire } from '../constants/sapphire';
 const actions: {
   label: string;
-  path: '/bestellingen' | '/spoed' | '/jobs' | '/kaart' | '/agenda' | '/chat' | '/customers';
+  path: '/media' | '/bestellingen' | '/spoed' | '/jobs' | '/kaart' | '/agenda' | '/chat' | '/customers';
   icon: MenuIconName;
   urgent?: boolean;
 }[] = [
+  { label: 'Foto’s & video’s', path: '/media', icon: 'camera' },
   { label: 'Inmeten', path: '/jobs', icon: 'measure' },
   { label: 'Kaart', path: '/kaart', icon: 'map' },
   { label: 'Agenda', path: '/agenda', icon: 'calendar' },

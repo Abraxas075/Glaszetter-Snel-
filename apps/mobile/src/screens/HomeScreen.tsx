@@ -7,7 +7,8 @@ import { todayJobCount } from '../api/dashboard';
 import { SapphireScreen } from '../components/SapphireScreen';
 import { GlassPanel } from '../components/GlassPanel';
 import { MenuIcon, type MenuIconName } from '../components/MenuIcon';
-import { sapphire } from '../constants/sapphire';
+import type { SapphirePalette } from '../constants/sapphire';
+import { useSapphire, useThemedStyles, useAppTheme } from '../contexts/ThemeContext';
 const actions: {
   label: string;
   path: '/media' | '/bestellingen' | '/spoed' | '/jobs' | '/kaart' | '/agenda' | '/chat' | '/customers';
@@ -24,6 +25,10 @@ const actions: {
   { label: 'Spoedmeldingen', path: '/spoed', icon: 'clipboard', urgent: true },
 ];
 export const HomeScreen: React.FC = () => {
+  const { theme } = useAppTheme();
+  const sapphire = useSapphire();
+  const styles = useThemedStyles(createStyles);
+
   const { token } = useAuth();
   const router = useRouter();
   const [count, setCount] = useState<number | null>(null);
@@ -51,7 +56,7 @@ export const HomeScreen: React.FC = () => {
     <SapphireScreen centerContent>
       <View style={styles.logoPlate}>
         <Image
-          source={require('../../assets/glaszetter-snel-logo-panel.png')}
+          source={theme === 'light' ? require('../../assets/glaszetter-snel-logo-light.json') : require('../../assets/glaszetter-snel-logo-panel.png')}
           accessibilityLabel="Glaszetter Snel"
           resizeMode="contain"
           style={styles.logo}
@@ -101,7 +106,7 @@ export const HomeScreen: React.FC = () => {
     </SapphireScreen>
   );
 };
-const styles = StyleSheet.create({
+const createStyles = (sapphire: SapphirePalette) => StyleSheet.create({
   logoPlate: { width: '100%', alignSelf: 'center', aspectRatio: 3.08, marginBottom: 12, overflow: 'hidden' },
   logo: { position: 'absolute', width: '110.2%', height: '130.8%', left: '-5.1%', top: '-16.1%' },
   row: {

@@ -1,6 +1,6 @@
 import { View } from 'react-native';
 import Feather from '@expo/vector-icons/Feather';
-import { sapphire } from '../constants/sapphire';
+import { useSapphire } from '../contexts/ThemeContext';
 export type MenuIconName =
   'camera' | 'package' | 'grid' | 'clipboard' | 'message-square' | 'user' | 'map' | 'calendar' | 'measure' | 'users';
 export function MenuIcon({
@@ -14,6 +14,8 @@ export function MenuIcon({
   active?: boolean;
   accent?: boolean;
 }) {
+  const sapphire = useSapphire();
+
   return (
     <View accessible={false} style={{ width: size + 4, height: size + 4 }}>
       {name === 'measure' ? (

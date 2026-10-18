@@ -4,7 +4,8 @@ import Feather from '@expo/vector-icons/Feather';
 import * as VideoThumbnails from 'expo-video-thumbnails';
 import { safeMediaUrl } from '@glaszetter/shared';
 import { createThumbnailLoader } from '../lib/thumbnailLoader';
-import { sapphire } from '../constants/sapphire';
+import type { SapphirePalette } from '../constants/sapphire';
+import { useSapphire, useThemedStyles } from '../contexts/ThemeContext';
 
 const loadThumbnail = createThumbnailLoader(async (url) => {
   const result = await VideoThumbnails.getThumbnailAsync(url, { time: 0, quality: 0.45 });
@@ -12,6 +13,9 @@ const loadThumbnail = createThumbnailLoader(async (url) => {
 });
 
 export function VideoThumbnail({ url, retryKey = 0 }: { url: string; retryKey?: number }) {
+  const sapphire = useSapphire();
+  const styles = useThemedStyles(createStyles);
+
   const [thumbnail, setThumbnail] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
@@ -49,7 +53,7 @@ export function VideoThumbnail({ url, retryKey = 0 }: { url: string; retryKey?: 
         />
       )}
       <View style={[styles.play, thumbnail && !failed ? styles.overlay : undefined]}>
-        <Feather name="play" size={21} color={sapphire.text} />
+        <Feather name="play" size={21} color={thumbnail && !failed ? sapphire.onAccent : sapphire.text} />
       </View>
       {!thumbnail || failed ? (
         <Text style={styles.label}>{failed ? 'Video bekijken' : 'Miniatuur laden…'}</Text>
@@ -57,7 +61,7 @@ export function VideoThumbnail({ url, retryKey = 0 }: { url: string; retryKey?: 
     </View>
   );
 }
-const styles = StyleSheet.create({
+const createStyles = (sapphire: SapphirePalette) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: sapphire.background,

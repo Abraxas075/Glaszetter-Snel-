@@ -227,6 +227,8 @@ export const deleteJob = async (companyId: string, id: string): Promise<void> =>
        AND NOT EXISTS (SELECT 1 FROM elements WHERE elements.job_id = job.id)
        AND NOT EXISTS (SELECT 1 FROM measurements WHERE measurements.job_id = job.id)
        AND NOT EXISTS (SELECT 1 FROM photos WHERE photos.job_id = job.id)
+       AND NOT EXISTS (SELECT 1 FROM job_videos WHERE job_videos.job_id = job.id)
+       AND NOT EXISTS (SELECT 1 FROM chat_messages WHERE chat_messages.job_id = job.id)
        AND NOT EXISTS (SELECT 1 FROM quotes WHERE quotes.job_id = job.id)
        AND NOT EXISTS (SELECT 1 FROM invoices WHERE invoices.job_id = job.id)
      RETURNING job.id`,
@@ -236,7 +238,7 @@ export const deleteJob = async (companyId: string, id: string): Promise<void> =>
 
   await getJob(companyId, id);
   throw new ConflictError(
-    'Deze klus bevat al een meetbon, metingen, foto\'s, offertes of facturen en kan daarom niet worden verwijderd.',
+    'Deze klus bevat al een meetbon, metingen, foto\'s, chatberichten, offertes of facturen en kan daarom niet worden verwijderd.',
     'JOB_HAS_WORK_DATA'
   );
 };

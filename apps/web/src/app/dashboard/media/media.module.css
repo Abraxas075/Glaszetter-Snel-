@@ -1,0 +1,288 @@
+.page {
+  color-scheme: dark;
+  color: var(--color-text-primary);
+  background: var(--color-background);
+  max-width: 1120px;
+  margin: 0 auto;
+}
+.heading {
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--color-inner-border);
+  margin-bottom: 22px;
+}
+.eyebrow {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  margin-bottom: 10px;
+}
+.heading h1 {
+  margin: 0 0 10px;
+}
+.heading h1::after {
+  content: '';
+  display: block;
+  width: 48px;
+  height: 3px;
+  background: var(--color-accent);
+  margin-top: 12px;
+}
+.heading p {
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+.selection {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.selection label {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+.selection select {
+  flex: 1;
+  max-width: 480px;
+}
+.page input,
+.page select {
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-inner-border);
+  padding: 11px 12px;
+  border-radius: 0;
+  min-height: 44px;
+  min-width: 0;
+}
+.page input[type='file'] {
+  width: 100%;
+}
+.page input::file-selector-button {
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-inner-border);
+  border-radius: 0;
+  padding: 8px 12px;
+  margin-right: 12px;
+}
+.page button {
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-inner-border);
+  padding: 10px 15px;
+  border-radius: 0;
+  font-size: 13px;
+}
+.upload {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--glass-frame);
+  margin: 0 0 22px;
+}
+.upload summary {
+  min-height: 52px;
+  padding: 15px 18px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--color-text-primary);
+}
+.upload summary::marker {
+  color: var(--color-primary);
+}
+.upload summary span {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  margin-left: 15px;
+}
+.upload[open] summary {
+  border-bottom: 1px solid var(--color-inner-border);
+}
+.upload form {
+  padding: 18px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: start;
+  gap: 16px;
+}
+.upload form label {
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+  min-width: 0;
+}
+.upload form small {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  align-self: center;
+}
+.page button[type='submit'] {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  border-color: var(--color-primary);
+  justify-self: end;
+  font-weight: 600;
+}
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.filters {
+  display: flex;
+  border-bottom: 1px solid var(--color-inner-border);
+  gap: 4px;
+}
+.filters button {
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--color-text-secondary);
+  padding: 10px 16px;
+}
+.filters button[aria-pressed='true'] {
+  border-bottom-color: var(--color-primary);
+  color: var(--color-text-primary);
+}
+.page .refresh {
+  background: transparent;
+  border: 0;
+  color: var(--color-text-secondary);
+}
+.page [role='alert'] {
+  color: var(--color-error);
+  padding: 12px 0;
+}
+.page [role='status'] {
+  color: var(--color-text-primary);
+  padding: 12px 0;
+}
+.empty {
+  color: var(--color-text-secondary);
+  padding: 30px 0;
+}
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 210px), 1fr));
+  gap: 14px;
+}
+.tile {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--glass-frame);
+  min-width: 0;
+  transition: border-color 0.15s ease;
+}
+.tile:hover,
+.tile:focus-within {
+  border-color: var(--color-primary);
+}
+.tileTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  color: var(--color-text-secondary);
+  font-size: 11px;
+}
+.tileTop > span {
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+.thumbnail {
+  aspect-ratio: 4/3;
+  background: var(--color-background);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.thumbnail > a {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+.thumbnail img,
+.thumbnail video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.tileBottom {
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 66px;
+}
+.tileBottom p {
+  font-size: 14px;
+  line-height: 1.45;
+  font-weight: 500;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow-wrap: anywhere;
+}
+.tileBottom a {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  font-size: 11px;
+  white-space: nowrap;
+  min-height: 44px;
+}
+@media (max-width: 600px) {
+  .upload form {
+    grid-template-columns: 1fr;
+  }
+  .upload summary span {
+    display: block;
+    margin: 6px 0 0 18px;
+  }
+  .selection {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .page button[type='submit'] {
+    justify-self: start;
+  }
+  .gallery {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .tileTop {
+    padding: 8px;
+  }
+  .tileBottom {
+    padding: 10px;
+    gap: 4px;
+  }
+  .tileBottom a {
+    font-size: 0;
+  }
+  .tileBottom a span {
+    font-size: 16px;
+  }
+}
+@media (max-width: 360px) {
+  .gallery {
+    grid-template-columns: 1fr;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tile {
+    transition: none;
+  }
+}

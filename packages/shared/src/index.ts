@@ -12,3 +12,6 @@ export * from './googleMaps';
 
 export * from './jobMap';
 export * from './mapPlanning';
+
+export * from './chat';
+export * from './media';

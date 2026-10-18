@@ -1,0 +1,186 @@
+.page {
+  max-width: 1250px;
+  margin: auto;
+}
+.subtitle {
+  color: var(--color-text-secondary);
+  margin: 12px 0 24px;
+}
+.shell {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--glass-frame);
+  background: var(--color-background);
+}
+.channels {
+  background: var(--color-surface);
+  background-image: var(--glass-reflection);
+  padding: 12px;
+  border-right: 1px solid var(--color-inner-border);
+  max-height: 720px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.channels button {
+  padding: 12px;
+  text-align: left;
+  display: grid;
+  gap: 5px;
+  border: 1px solid var(--color-inner-border);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  min-height: 60px;
+}
+.channels button[aria-current='page'] {
+  border-color: var(--color-primary);
+}
+.channels small {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+.conversation {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 620px;
+  max-height: 800px;
+}
+.conversation header {
+  padding: 16px;
+  border-bottom: 1px solid var(--color-inner-border);
+}
+.conversation h2 {
+  font-size: 19px;
+  margin-bottom: 7px;
+}
+.conversation small {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+.messages {
+  padding: 18px;
+  flex: 1;
+  overflow: auto;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.bubble {
+  align-self: flex-start;
+  max-width: 90%;
+  min-width: 120px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-inner-border);
+  padding: 12px;
+  display: grid;
+  gap: 8px;
+  overflow-wrap: anywhere;
+}
+.own {
+  align-self: flex-end;
+  background: var(--color-surface);
+  border-left: 2px solid var(--color-primary);
+}
+.bubble p {
+  white-space: pre-wrap;
+  font-size: 15px;
+  line-height: 1.6;
+}
+.bubble img,
+.bubble video {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  max-height: 260px;
+  object-fit: contain;
+}
+.bubble time {
+  font-size: 10px;
+  color: var(--color-text-secondary);
+}
+.composer {
+  padding: 12px;
+  border-top: 1px solid var(--color-inner-border);
+  background: var(--color-surface);
+}
+.composeRow {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+.composer textarea {
+  flex: 1;
+  min-width: 0;
+  resize: vertical;
+  max-height: 150px;
+  min-height: 64px;
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  padding: 10px;
+  border: 1px solid var(--color-inner-border);
+  font-size: 16px;
+}
+.page button {
+  min-height: 44px;
+}
+.composeRow button {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  padding: 11px 15px;
+}
+.file {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 12px;
+  align-items: center;
+  color: var(--color-text-secondary);
+  margin-bottom: 12px;
+}
+.file input {
+  max-width: 100%;
+  min-width: 0;
+  font-size: 12px;
+}
+.composer p {
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+.composer p button {
+  padding: 8px;
+  background: var(--color-background);
+  color: var(--color-text-primary);
+}
+.page [role='alert'] {
+  padding: 12px;
+  color: var(--color-error);
+  font-size: 13px;
+}
+.page [role='alert'] button {
+  color: var(--color-primary);
+  background: transparent;
+  margin-left: 8px;
+}
+@media (max-width: 700px) {
+  .shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .channels {
+    max-height: 180px;
+    border-right: 0;
+    border-bottom: 1px solid var(--color-inner-border);
+  }
+  .conversation {
+    min-height: 600px;
+  }
+  .composeRow {
+    flex-wrap: wrap;
+  }
+  .composeRow textarea {
+    flex-basis: 100%;
+  }
+}

@@ -11,12 +11,11 @@ import { GlassPanel } from '../components/GlassPanel';
 import { sapphire } from '../constants/sapphire';
 import { localDateKey, scheduledDateKey } from '../utils/dayRange';
 
-type Mode = 'agenda' | 'kaart' | 'customers' | 'chat' | 'profile';
+type Mode = 'agenda' | 'kaart' | 'customers' | 'profile';
 const titles: Record<Mode, string> = {
   agenda: 'Agenda',
   kaart: 'Kaart',
   customers: 'Klantgegevens',
-  chat: 'Chat',
   profile: 'Profiel',
 };
 const roles: Record<string, string> = {
@@ -49,7 +48,7 @@ export function DashboardScreen({ mode }: { mode: Mode }) {
   useFocusEffect(
     useCallback(() => {
       let active = true;
-      if (!token || mode === 'chat' || mode === 'profile') return;
+      if (!token || mode === 'profile') return;
       setBusy(true);
       setError(false);
       setJobs([]);
@@ -197,14 +196,6 @@ export function DashboardScreen({ mode }: { mode: Mode }) {
             </GlassPanel>
           ))}
         </>
-      )}
-      {mode === 'chat' && (
-        <GlassPanel style={s.card}>
-          <Text style={s.title}>Chat is nog niet beschikbaar</Text>
-          <Text style={s.muted}>
-            Berichten versturen en ontvangen wordt in een volgende versie toegevoegd.
-          </Text>
-        </GlassPanel>
       )}
       {mode === 'profile' && (
         <>

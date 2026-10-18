@@ -2,7 +2,7 @@ import { View } from 'react-native';
 import Feather from '@expo/vector-icons/Feather';
 import { sapphire } from '../constants/sapphire';
 export type MenuIconName =
-  'package' | 'grid' | 'clipboard' | 'message-square' | 'user' | 'map' | 'calendar' | 'measure' | 'users';
+  'camera' | 'package' | 'grid' | 'clipboard' | 'message-square' | 'user' | 'map' | 'calendar' | 'measure' | 'users';
 export function MenuIcon({
   name,
   size = 28,

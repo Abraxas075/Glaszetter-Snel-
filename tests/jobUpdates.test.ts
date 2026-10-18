@@ -44,6 +44,8 @@ before(async () => {
     CREATE TABLE elements (job_id uuid NOT NULL);
     CREATE TABLE measurements (job_id uuid NOT NULL);
     CREATE TABLE photos (job_id uuid NOT NULL);
+    CREATE TABLE job_videos (job_id uuid NOT NULL);
+    CREATE TABLE chat_messages (job_id uuid NOT NULL);
     CREATE TABLE quotes (job_id uuid NOT NULL);
     CREATE TABLE invoices (job_id uuid NOT NULL);
   `);
@@ -75,6 +77,8 @@ beforeEach(async () => {
   await db.query('DELETE FROM elements');
   await db.query('DELETE FROM measurements');
   await db.query('DELETE FROM photos');
+  await db.query('DELETE FROM job_videos');
+  await db.query('DELETE FROM chat_messages');
   await db.query('DELETE FROM quotes');
   await db.query('DELETE FROM invoices');
   await db.query('DELETE FROM jobs');
@@ -173,6 +177,8 @@ test('work data protects a job from deletion, while an empty job can be deleted'
   assert.equal((await service.getJob(companyId, jobId)).name, 'Testklus');
 
   await db.query('DELETE FROM photos');
+  await db.query('DELETE FROM job_videos');
+  await db.query('DELETE FROM chat_messages');
   await assert.rejects(service.deleteJob(otherCompanyId, jobId), /not found/i);
   await service.deleteJob(companyId, jobId);
   await assert.rejects(service.getJob(companyId, jobId), /not found/i);
@@ -417,4 +423,10 @@ test('duplicate order numbers reject atomically, including simultaneous writers;
   assert.equal((await service.getJob(companyId, loser)).notes, prior.notes);
   for (const orderNumber of [42, 'x'.repeat(61), 'Geen\u0000NUL', 'Regel\nnummer']) await assert.rejects(service.updateJob(companyId, winner.id, { orderNumber } as any), (error: any) => error.status === 400);
   assert.equal((await service.getJob(companyId, winner.id)).orderNumber, winner.orderNumber);
+});
+
+test('a job with videos cannot be removed', async()=>{
+  await db.query('INSERT INTO job_videos(job_id) VALUES($1)',[jobId]);
+  await assert.rejects(service.deleteJob(companyId,jobId),/meetbon/i);
+  assert.equal((await db.query('SELECT id FROM jobs WHERE id=$1',[jobId])).rows.length,1);
 });

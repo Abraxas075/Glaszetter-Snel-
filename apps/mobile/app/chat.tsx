@@ -1,4 +1,4 @@
-import { DashboardScreen } from '../src/screens/DashboardScreen';
+import { ChatScreen } from '../src/screens/ChatScreen';
 export default function Screen() {
-  return <DashboardScreen mode="chat" />;
+  return <ChatScreen />;
 }

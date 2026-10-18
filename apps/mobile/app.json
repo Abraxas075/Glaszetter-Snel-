@@ -34,8 +34,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Sta toe dat Glaszetter Snel foto's uit je bibliotheek gebruikt voor het documenteren van klussen, elementen en spoedmeldingen.",
-          "cameraPermission": "Sta toe dat Glaszetter Snel je camera gebruikt om foto's te maken van klussen, elementen en spoedmeldingen."
+          "photosPermission": "Sta toe dat Glaszetter Snel foto's en video's uit je bibliotheek gebruikt voor het documenteren van klussen, elementen en spoedmeldingen.",
+          "cameraPermission": "Sta toe dat Glaszetter Snel je camera gebruikt om foto's en video's te maken van klussen, elementen en spoedmeldingen."
         }
       ]
     ],

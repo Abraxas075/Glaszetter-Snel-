@@ -24,6 +24,8 @@ const NAV_ITEMS = [
     label: 'Klussen',
     icon: 'M9 5H4v16h16V5h-5 M9 3h6v4H9z M8 12h8 M8 16h5',
   },
+  { href: '/dashboard/chat', label: 'Chat', icon: 'M21 11a8 8 0 0 1-8 8H7l-5 3 2-6a8 8 0 1 1 17-5z' },
+  { href: '/dashboard/media', label: 'Foto’s & video’s', icon: 'M3 7h4l2-3h6l2 3h4v13H3z M16 13a4 4 0 1 0-8 0 4 4 0 0 0 8 0' },
   { href: '/dashboard/kaart', label: 'Kaart', icon: 'M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z M9 3v15 M15 6v15' },
   { href: '/dashboard/planning', label: 'Planning', icon: 'M3 5h18v16H3z M16 3v4 M8 3v4 M3 11h18' },
   {

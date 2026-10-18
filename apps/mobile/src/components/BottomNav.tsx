@@ -4,10 +4,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 import { sapphire } from '../constants/sapphire';
 import { MenuIcon, type MenuIconName } from './MenuIcon';
-const tabs: { label: string; path: '/' | '/my-jobs' | '/chat' | '/profile'; icon: MenuIconName }[] =
+const tabs: { label: string; path: '/' | '/my-jobs' | '/chat' | '/profile' | '/media'; icon: MenuIconName }[] =
   [
     { label: 'Menu', path: '/', icon: 'grid' },
     { label: 'Klussen', path: '/my-jobs', icon: 'clipboard' },
+    { label: 'Beelden', path: '/media', icon: 'camera' },
     { label: 'Chat', path: '/chat', icon: 'message-square' },
     { label: 'Profiel', path: '/profile', icon: 'user' },
   ];
@@ -18,6 +19,7 @@ export const sapphirePaths = [
   '/bestellingen',
   '/agenda',
   '/kaart',
+  '/media',
   '/customers',
   '/chat',
   '/profile',

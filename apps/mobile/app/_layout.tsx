@@ -4,22 +4,38 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { AuthProvider } from '../src/contexts/AuthContext';
 import { BottomNav, sapphirePaths } from '../src/components/BottomNav';
-import { sapphire } from '../src/constants/sapphire';
+import { ThemeProvider, useAppTheme } from '../src/contexts/ThemeContext';
 export default function RootLayout() {
-  const path = usePathname();
-  const dark = sapphirePaths.includes(path) || path.startsWith('/spoed/');
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <StatusBar
-          style={dark ? 'light' : 'dark'}
-          backgroundColor={dark ? sapphire.background : '#FFFFFF'}
-        />
-        <View style={{ flex: 1 }}>
-          <Stack screenOptions={{ headerShown: false }} />
-        </View>
-        <BottomNav />
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <ThemedApp />
+        </AuthProvider>
+      </ThemeProvider>
     </SafeAreaProvider>
+  );
+}
+function ThemedApp() {
+  const { theme, palette: sapphire } = useAppTheme();
+  const path = usePathname();
+  const themed = sapphirePaths.includes(path) || path.startsWith('/spoed/');
+  const dark = themed && theme === 'dark';
+  return (
+    <>
+      <StatusBar
+        style={dark ? 'light' : 'dark'}
+        backgroundColor={themed ? sapphire.background : '#FFFFFF'}
+      />
+      <View style={{ flex: 1, backgroundColor: sapphire.background }}>
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: sapphire.background },
+          }}
+        />
+      </View>
+      <BottomNav />
+    </>
   );
 }

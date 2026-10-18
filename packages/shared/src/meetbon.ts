@@ -332,7 +332,7 @@ export const MEETBON_SECTIONS = [
     ]
   }
 ] as const;
-export interface MeetbonLine { quantity: number; width: number; height: number; glassType: string; notes: string; }
+export interface MeetbonLine { quantity: number; width: number; height: number; glassType: string; glassThickness?: string; notes: string; }
 export interface Meetbon { revision?: string | null; fields: Record<string, string>; checks: Record<string, boolean>; lines: MeetbonLine[]; }
 export const emptyMeetbon = (): Meetbon => ({ fields: {}, checks: {}, lines: [] });
 // PostgreSQL jsonb cannot store NUL or unpaired UTF-16 surrogates.
@@ -360,5 +360,6 @@ export function isMeetbon(value: unknown): value is Meetbon {
       && Number.isFinite(l.width) && l.width > 0 && l.width <= 100000
       && Number.isFinite(l.height) && l.height > 0 && l.height <= 100000
       && isStoredText(l.glassType)
+      && (l.glassThickness === undefined || isStoredText(l.glassThickness))
       && isStoredText(l.notes));
 }

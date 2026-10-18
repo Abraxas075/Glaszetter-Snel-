@@ -21,3 +21,17 @@ test('save status detects changes to fields, checks and panes and clears after s
   }
   assert.equal(hasMeetbonChanges({ ...saved, fields: { name: '' } }, saved), false);
 });
+
+test('glass thickness is optional for older meetbons and participates in save status and conflict comparison', async () => {
+  const { isMeetbon } = await import('../packages/shared/src/meetbon');
+  const { compareMeetbons } = await import('../packages/shared/src/meetbonMerge');
+  const base = { ...emptyMeetbon(), lines: [{ quantity: 1, width: 875, height: 484, glassType: 'HR++', notes: '' }] };
+  const own = { ...base, lines: [{ ...base.lines[0], glassThickness: '4-16-4' }] };
+  assert.equal(isMeetbon(base), true);
+  assert.equal(isMeetbon(own), true);
+  assert.equal(hasMeetbonChanges(own, base), true);
+  assert.equal(compareMeetbons(base, own, base).merged.lines[0].glassThickness, '4-16-4');
+  for (const invalid of [null, 6, 'x'.repeat(2001), '\u0000']) {
+    assert.equal(isMeetbon({ ...base, lines: [{ ...base.lines[0], glassThickness: invalid }] }), false);
+  }
+});

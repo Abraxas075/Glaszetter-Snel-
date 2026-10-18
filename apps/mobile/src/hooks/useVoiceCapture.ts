@@ -50,12 +50,16 @@ export const useVoiceCapture = () => {
       return;
     }
 
-    setState({ isListening: false, transcript: '', error: null });
-    ExpoSpeechRecognitionModule.start({
-      lang: 'nl-NL',
-      interimResults: true,
-      continuous: false,
-    });
+    setState({ isListening: true, transcript: '', error: null });
+    try {
+      ExpoSpeechRecognitionModule.start({
+        lang: 'nl-NL',
+        interimResults: true,
+        continuous: false,
+      });
+    } catch (err) {
+      setState({ isListening: false, transcript: '', error: err instanceof Error ? err.message : 'Spraak starten is mislukt' });
+    }
   }, []);
 
   const stop = useCallback(() => {

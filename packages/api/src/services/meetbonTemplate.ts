@@ -45,9 +45,10 @@ export function drawMeetbonTemplate(doc: PDFKit.PDFDocument, data: Meetbon, meta
   write('BREEDTE × HOOGTE (mm)', x + widths[0] + 7, y + 7, widths[1] - 14, 8, true);
   write('SOORT GLAS & OPMERKING', x + widths[0] + widths[1] + 7, y + 7, widths[2] - 14, 8, true);
   for (const [i, line] of data.lines.entries()) {
-    const values = [String(line.quantity), `${line.width} × ${line.height}`, `${line.glassType || '-'}${line.notes ? ' | ' + line.notes : ''}`];
+    const glass = [line.glassType, line.glassThickness].filter(Boolean).join(' | ') || '-';
+    const values = [String(line.quantity), `${line.width} × ${line.height}`, `${glass}${line.notes ? ' | ' + line.notes : ''}`];
     if (i >= rows) {
-      overflow.push({ label: `Ruit ${i + 1}`, value: `Aantal: ${line.quantity} | Breedte: ${line.width} mm | Hoogte: ${line.height} mm\nSoort glas: ${line.glassType || '-'}\nOpmerking: ${line.notes || '-'}` });
+      overflow.push({ label: `Ruit ${i + 1}`, value: `Aantal: ${line.quantity} | Breedte: ${line.width} mm | Hoogte: ${line.height} mm\nSoort glas: ${glass}\nOpmerking: ${line.notes || '-'}` });
       continue;
     }
     let cellX = x;
@@ -55,7 +56,7 @@ export function drawMeetbonTemplate(doc: PDFKit.PDFDocument, data: Meetbon, meta
     values.forEach((v, j) => { cell(`Ruit ${i + 1}`, v, cellX, y + headerHeight + i * rowHeight, widths[j], rowHeight, 9); cellX += widths[j]; });
     if (overflow.length > before) {
       overflow.splice(before);
-      overflow.push({ label: `Ruit ${i + 1}`, value: `Aantal: ${line.quantity} | Breedte: ${line.width} mm | Hoogte: ${line.height} mm\nSoort glas: ${line.glassType || '-'}\nOpmerking: ${line.notes || '-'}` });
+      overflow.push({ label: `Ruit ${i + 1}`, value: `Aantal: ${line.quantity} | Breedte: ${line.width} mm | Hoogte: ${line.height} mm\nSoort glas: ${glass}\nOpmerking: ${line.notes || '-'}` });
     }
   }
   const area = data.lines.reduce((sum, line) => sum + line.quantity * line.width * line.height / 1e6, 0).toLocaleString('nl-NL', { maximumFractionDigits: 3 });

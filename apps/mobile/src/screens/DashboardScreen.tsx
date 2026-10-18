@@ -6,9 +6,10 @@ import { Redirect, useFocusEffect, useRouter } from 'expo-router';
 import type { Customer, Job } from '@glaszetter/shared';
 import { agendaJobs, customerDirectory } from '../api/dashboard';
 import { useAuth } from '../contexts/AuthContext';
-import { SapphireScreen, sapphireStyles as s } from '../components/SapphireScreen';
+import { SapphireScreen, useSapphireStyles } from '../components/SapphireScreen';
 import { GlassPanel } from '../components/GlassPanel';
-import { sapphire } from '../constants/sapphire';
+import { ThemePicker } from '../components/ThemePicker';
+import { useSapphire } from '../contexts/ThemeContext';
 import { localDateKey, scheduledDateKey } from '../utils/dayRange';
 
 type Mode = 'agenda' | 'kaart' | 'customers' | 'profile';
@@ -35,6 +36,9 @@ async function openLink(url: string) {
   }
 }
 export function DashboardScreen({ mode }: { mode: Mode }) {
+  const sapphire = useSapphire();
+  const s = useSapphireStyles();
+
   const { user, token, isLoading, logout } = useAuth();
   const router = useRouter();
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -212,6 +216,7 @@ export function DashboardScreen({ mode }: { mode: Mode }) {
             <Text style={s.muted}>{roles[user.role] || user.role}</Text>
             <Text style={s.text}>{user.email}</Text>
           </GlassPanel>
+          <ThemePicker />
           <Pressable
             accessibilityRole="button"
             disabled={signingOut}
@@ -228,7 +233,7 @@ export function DashboardScreen({ mode }: { mode: Mode }) {
               }
             }}
           >
-            <Text style={s.actionText}>{signingOut ? 'Uitloggen…' : 'Uitloggen'}</Text>
+            <Text style={[s.actionText, { color: sapphire.onAccent }]}>{signingOut ? 'Uitloggen…' : 'Uitloggen'}</Text>
           </Pressable>
         </>
       )}

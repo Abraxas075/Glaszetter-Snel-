@@ -23,7 +23,7 @@ const input: MeetbonPdfInput = {
   company: { id: companyId, name: 'Glaszetter Snel', createdAt: date, updatedAt: date },
   project: { id: projectId, companyId, customerId: companyId, name: 'Voorbeeldproject', status: 'active', createdAt: date, updatedAt: date },
   job: { id: jobId, companyId, projectId, name: 'Voorbeeldklus', status: 'measuring', createdAt: date, updatedAt: date },
-  data: { fields: { name: 'Testklant', remarks: 'Laatste opmerking' }, checks: { g1c0: true }, lines: [{ quantity: 2, width: 875, height: 484, glassType: 'HR++', notes: 'Woonkamer' }] },
+  data: { fields: { name: 'Testklant', remarks: 'Laatste opmerking' }, checks: { g1c0: true }, lines: [{ quantity: 2, width: 875, height: 484, glassType: 'HR++', glassThickness: '4-16-4', notes: 'Woonkamer' }] },
   updatedAt: date, photos: [],
 };
 
@@ -47,7 +47,7 @@ test('PDF contains saved fields, choices, measurements, quantity-aware area and 
   const pdf = await generateMeetbonPdf(many);
   assert.equal(pdf.subarray(0, 5).toString(), '%PDF-');
   const text = await pdfText(pdf);
-  for (const value of ['Testklant', 'Oud werk', 'Nieuw werk', 'BREEDTE × HOOGTE (mm)', 'Breedte: 875 mm', 'Hoogte: 484 mm', 'HR++', 'Regel 200:', 'Totaal: 400 ruiten - 169,4', 'Vervolg meetbon']) assert.ok(text.includes(value), value);
+  for (const value of ['Testklant', 'Oud werk', 'Nieuw werk', 'BREEDTE × HOOGTE (mm)', 'Breedte: 875 mm', 'Hoogte: 484 mm', 'HR++', '4-16-4', 'Regel 200:', 'Totaal: 400 ruiten - 169,4', 'Vervolg meetbon']) assert.ok(text.includes(value), value);
   assert.ok((pdf.toString('latin1').match(/\/Type \/Page\b/g) ?? []).length > 2);
 });
 
@@ -88,7 +88,7 @@ test('template includes every stored field and choice, with fourteen pane rows',
 test('a normal meetbon fits one template page with its logo, dimensions and total', async () => {
   const pdf = await generateMeetbonPdf(input);
   const text = await pdfText(pdf);
-  for (const value of ['Testklant', 'Laatste opmerking', '875 × 484', 'HR++ | Woonkamer', 'Totaal: 2 ruiten - 0,847', 'Geen foto’s opgeslagen']) assert.ok(text.includes(value), value);
+  for (const value of ['Testklant', 'Laatste opmerking', '875 × 484', 'HR++ | 4-16-4 | Woonkamer', 'Totaal: 2 ruiten - 0,847', 'Geen foto’s opgeslagen']) assert.ok(text.includes(value), value);
   assert.equal((pdf.toString('latin1').match(/\/Type \/Page\b/g) ?? []).length, 1);
   assert.ok(pdf.toString('latin1').includes('/Subtype /Image'), 'Logo is embedded');
 });

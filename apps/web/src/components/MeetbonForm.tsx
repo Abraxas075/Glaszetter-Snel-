@@ -2,7 +2,7 @@
 import { GoogleMapsActions } from './GoogleMapsActions';
 import { meetbonMapLocation, type MapLocation } from '@glaszetter/shared';
 import { useEffect, useRef, useState } from 'react';
-import { hasMeetbonChanges, compareMeetbons, resolveMeetbonComparison, type MeetbonComparison, emptyMeetbon, isMeetbon, MEETBON_SECTIONS, type Meetbon } from '@glaszetter/shared';
+import { hasMeetbonChanges, compareMeetbons, resolveMeetbonComparison, type MeetbonComparison, emptyMeetbon, isMeetbon, getGlassThicknessOptions, MEETBON_SECTIONS, type Meetbon } from '@glaszetter/shared';
 import { ApiError, apiRequest, fetchBlob } from '../lib/api';
 import { formStyles, pageStyles } from '../styles/shared';
 export function MeetbonForm({ jobId, project, projectLoading, projectError, onRetryProject }: { jobId: string; project?: MapLocation | null; projectLoading?: boolean; projectError?: string; onRetryProject?: () => void }) {
@@ -135,11 +135,12 @@ export function MeetbonForm({ jobId, project, projectLoading, projectError, onRe
           <summary><span>Ruiten</span><span className="meetbon-filled">{data.lines.length} {data.lines.length === 1 ? 'ruit' : 'ruiten'}</span><span className="meetbon-disclosure-icon" aria-hidden="true" /></summary>
           <fieldset className="meetbon-disclosure-content">
           <legend className="sr-only">Ruiten</legend>
-          <p className="meetbon-description">Aantal, breedte × hoogte, soort glas en opmerking</p>
+          <p className="meetbon-description">Aantal, breedte × hoogte, soort glas, glasdikte / opbouw en opmerking</p>
         {data.lines.map((line, index) => <fieldset key={index} className="glass-panel meetbon-panel">
           <legend>Ruit {index + 1}</legend>
+          <datalist id={`meetbon-glass-thicknesses-${index}`}>{getGlassThicknessOptions(line.glassType).map(value => <option key={value} value={value} />)}</datalist>
           <div className="meetbon-fields meetbon-line-fields">
-            {(['quantity', 'width', 'height', 'glassType', 'notes'] as const).map(key => <label key={key}>{({ quantity: 'Aantal', width: 'Breedte (mm)', height: 'Hoogte (mm)', glassType: 'Soort glas', notes: 'Opmerking' })[key]}<input maxLength={key === 'glassType' || key === 'notes' ? 2000 : undefined} style={formStyles.input} type={key === 'glassType' || key === 'notes' ? 'text' : 'number'} min="1" step={key === 'quantity' ? '1' : 'any'} required={key !== 'glassType' && key !== 'notes'} value={line[key] || ''} onChange={e => updateData({ ...data, lines: data.lines.map((l, i) => i === index ? { ...l, [key]: key === 'glassType' || key === 'notes' ? e.target.value : Number(e.target.value) } : l) })} /></label>)}
+            {(['quantity', 'width', 'height', 'glassType', 'glassThickness', 'notes'] as const).map(key => <label key={key}>{({ quantity: 'Aantal', width: 'Breedte (mm)', height: 'Hoogte (mm)', glassType: 'Soort glas', glassThickness: 'Glasdikte / opbouw', notes: 'Opmerking' })[key]}<input list={key === 'glassThickness' ? `meetbon-glass-thicknesses-${index}` : undefined} maxLength={key === 'glassType' || key === 'glassThickness' || key === 'notes' ? 2000 : undefined} style={formStyles.input} type={key === 'glassType' || key === 'glassThickness' || key === 'notes' ? 'text' : 'number'} min="1" step={key === 'quantity' ? '1' : 'any'} required={key !== 'glassType' && key !== 'glassThickness' && key !== 'notes'} value={line[key] || ''} onChange={e => updateData({ ...data, lines: data.lines.map((l, i) => i === index ? { ...l, [key]: key === 'glassType' || key === 'glassThickness' || key === 'notes' ? e.target.value : Number(e.target.value) } : l) })} /></label>)}
           </div>
           <button className="sapphire-button sapphire-button-secondary" type="button" onClick={() => updateData({ ...data, lines: data.lines.filter((_, i) => i !== index) })}>Ruit verwijderen</button>
         </fieldset>)}

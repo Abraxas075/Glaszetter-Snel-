@@ -19,7 +19,7 @@ export default function RootLayout() {
 function ThemedApp() {
   const { theme, palette: sapphire } = useAppTheme();
   const path = usePathname();
-  const themed = sapphirePaths.includes(path) || path.startsWith('/spoed/');
+  const themed = sapphirePaths.includes(path) || path.startsWith('/spoed/') || /^\/jobs\/[^/]+\/meetbon$/.test(path);
   const dark = themed && theme === 'dark';
   return (
     <>

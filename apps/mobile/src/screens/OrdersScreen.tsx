@@ -6,11 +6,14 @@ import { OrderPdfButton } from '../components/OrderPdfButton';
 import { OrderDetails } from '../components/OrderDetails';
 import { useAuth } from '../contexts/AuthContext';
 import { apiRequest } from '../api/client';
-import { SapphireScreen, sapphireStyles as s } from '../components/SapphireScreen';
+import { SapphireScreen, useSapphireStyles } from '../components/SapphireScreen';
 import { GlassPanel } from '../components/GlassPanel';
-import { sapphire } from '../constants/sapphire';
+import { useSapphire } from '../contexts/ThemeContext';
 import { SupplierDirectory, useSuppliers } from '../components/Suppliers';
 export function OrdersScreen() {
+  const sapphire = useSapphire();
+  const s = useSapphireStyles();
+
   const { token, user, isLoading } = useAuth(); const router = useRouter(); const navigation = useNavigation();
   const supplierDirectory = useSuppliers(token);
   const [editorVersion, setEditorVersion] = useState(0);

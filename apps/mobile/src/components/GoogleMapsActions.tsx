@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Alert, Linking, Pressable, Text, View } from 'react-native';
 import { googleMapsLinks, type MapLocation } from '../utils/googleMaps';
 import { useJobLocation } from '../hooks/useMapLocations';
+import { useAppTheme } from '../contexts/ThemeContext';
 
 interface Props {
   location?: MapLocation | null;
@@ -11,6 +12,8 @@ interface Props {
   dark?: boolean;
 }
 export function GoogleMapsActions({ location, loading, error, retry, dark = false }: Props) {
+  const { theme } = useAppTheme();
+  dark = dark && theme === 'dark';
   const [opening, setOpening] = useState(false);
   const links = googleMapsLinks(location);
   const textColor = dark ? '#B9CEDF' : '#475467';

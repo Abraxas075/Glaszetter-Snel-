@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { shareOrderPdf } from '../api/orderPdf';
-import { sapphireStyles as s } from './SapphireScreen';
+import { useSapphireStyles } from './SapphireScreen';
 export function OrderPdfButton({ jobId, token, canExport, onBusy }: { jobId: string; token: string; canExport: () => boolean; onBusy: (id: string, dirty: boolean, busy: boolean) => void }) {
+  const s = useSapphireStyles();
+
   const [busy, setBusy] = useState(false), [message, setMessage] = useState('');
   async function download() {
     if (!canExport()) { setMessage('Sla eerst je bestelgegevens op. De bestelbon gebruikt de opgeslagen gegevens.'); return; }

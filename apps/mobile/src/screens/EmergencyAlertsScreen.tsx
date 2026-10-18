@@ -3,11 +3,14 @@ import { ActivityIndicator, Image, Linking, Pressable, Text, View } from 'react-
 import { Redirect, useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '../contexts/AuthContext';
 import { GlassPanel } from '../components/GlassPanel';
-import { SapphireScreen, sapphireStyles as s } from '../components/SapphireScreen';
-import { sapphire } from '../constants/sapphire';
+import { SapphireScreen, useSapphireStyles } from '../components/SapphireScreen';
+import { useSapphire } from '../contexts/ThemeContext';
 import { changeEmergencyAlert, listAssignees, listEmergencyAlerts, listEmergencyPhotos, photoSource, type Assignee, type EmergencyAlert, type EmergencyPhoto, type EmergencyStatus } from '../api/emergencyAlerts';
 const labels: Record<EmergencyStatus,string>={open:'Nieuw',in_progress:'In behandeling',resolved:'Afgerond'};
 export function EmergencyAlertsScreen() {
+  const sapphire = useSapphire();
+  const s = useSapphireStyles();
+
  const {user,token}=useAuth();const router=useRouter();
  const [alerts,setAlerts]=useState<EmergencyAlert[]>([]);const [members,setMembers]=useState<Assignee[]>([]);
  const [filter,setFilter]=useState<EmergencyStatus>('open');const [busy,setBusy]=useState(true);const [error,setError]=useState('');
@@ -24,7 +27,7 @@ export function EmergencyAlertsScreen() {
  if(user.role==='external')return <SapphireScreen title="Spoedmeldingen"><Text style={s.text}>Dit overzicht is beschikbaar voor medewerkers.</Text></SapphireScreen>;
  return <SapphireScreen title="Spoedmeldingen">
   <Text style={s.muted}>Meldingen registreren en de afhandeling volgen.</Text>
-  <Pressable accessibilityRole="button" style={[s.action,{backgroundColor:sapphire.red,marginVertical:16}]} onPress={()=>router.push('/spoed/new')}><Text style={s.actionText}>＋ Nieuwe spoedmelding</Text></Pressable>
+  <Pressable accessibilityRole="button" style={[s.action,{backgroundColor:sapphire.red,marginVertical:16}]} onPress={()=>router.push('/spoed/new')}><Text style={[s.actionText,{color:sapphire.onAccent}]}>＋ Nieuwe spoedmelding</Text></Pressable>
   <View style={{flexDirection:'row',flexWrap:'wrap',gap:8,marginBottom:16}}>{(Object.keys(labels) as EmergencyStatus[]).map(status=><Pressable key={status} accessibilityRole="button" accessibilityState={{selected:filter===status}} onPress={()=>setFilter(status)} style={{borderWidth:1,borderColor:filter===status?sapphire.red:sapphire.edge,padding:12,minHeight:44}}><Text style={s.text}>{labels[status]} {busy||error?'—':alerts.filter(a=>a.status===status).length}</Text></Pressable>)}</View>
   {error!==''&&<View><Text accessibilityRole="alert" style={s.text}>{error}</Text><Pressable accessibilityRole="button" style={s.action} onPress={()=>setReload(n=>n+1)}><Text style={s.actionText}>Opnieuw laden</Text></Pressable></View>}
   {busy&&<ActivityIndicator color={sapphire.blue}/>}
@@ -35,7 +38,7 @@ export function EmergencyAlertsScreen() {
    <View style={{gap:8}}>
     {alert.phone&&<Pressable accessibilityRole="button" style={s.action} onPress={()=>void open(`tel:${alert.phone.replace(/[^+0-9]/g,'')}`)}><Text style={s.actionText}>Bellen</Text></Pressable>}
     {alert.address&&<Pressable accessibilityRole="button" style={s.action} onPress={()=>void open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(alert.address)}`)}><Text style={s.actionText}>Route</Text></Pressable>}
-    <Pressable accessibilityRole="button" disabled={changing} style={[s.action,{backgroundColor:sapphire.red}]} onPress={()=>void change(alert,{status:alert.status==='open'?'in_progress':alert.status==='in_progress'?'resolved':'open'})}><Text style={s.actionText}>{alert.status==='open'?'In behandeling nemen':alert.status==='in_progress'?'Afronden':'Heropenen'}</Text></Pressable>
+    <Pressable accessibilityRole="button" disabled={changing} style={[s.action,{backgroundColor:sapphire.red}]} onPress={()=>void change(alert,{status:alert.status==='open'?'in_progress':alert.status==='in_progress'?'resolved':'open'})}><Text style={[s.actionText,{color:sapphire.onAccent}]}>{alert.status==='open'?'In behandeling nemen':alert.status==='in_progress'?'Afronden':'Heropenen'}</Text></Pressable>
     <Pressable accessibilityRole="button" disabled={changing} style={s.action} onPress={()=>setAssigning(assigning===alert.id?null:alert.id)}><Text style={s.actionText}>Medewerker wijzigen</Text></Pressable>
     {assigning===alert.id&&[ {id:'',name:'Niet toegewezen'},...members].map(m=><Pressable key={m.id} accessibilityRole="button" disabled={changing} style={s.action} onPress={()=>void change(alert,{assignedUserId:m.id||null})}><Text style={s.actionText}>{m.name}</Text></Pressable>)}
     <Pressable accessibilityRole="button" disabled={photoBusy!==null} style={s.action} onPress={()=>void loadPhotos(alert.id)}><Text style={s.actionText}>{photoBusy===alert.id?'Foto’s laden…':'Foto’s bekijken'}</Text></Pressable>

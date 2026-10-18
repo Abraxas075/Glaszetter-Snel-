@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
-import { sapphire } from '../constants/sapphire';
+import type { SapphirePalette } from '../constants/sapphire';
+import { useSapphire, useThemedStyles } from '../contexts/ThemeContext';
 export function GlassPanel({
   children,
   style,
@@ -10,6 +11,9 @@ export function GlassPanel({
   tone?: 'default' | 'urgent';
   style?: StyleProp<ViewStyle>;
 }) {
+  const sapphire = useSapphire();
+  const styles = useThemedStyles(createStyles);
+
   return (
     <View style={[styles.panel, tone === 'urgent' && { borderColor: sapphire.red, borderWidth: 2 }, style]}>
       <View pointerEvents="none" accessible={false} style={styles.reflection} />
@@ -18,7 +22,7 @@ export function GlassPanel({
     </View>
   );
 }
-const styles = StyleSheet.create({
+const createStyles = (sapphire: SapphirePalette) => StyleSheet.create({
   panel: {
     backgroundColor: sapphire.glass,
     borderColor: sapphire.edge,
@@ -38,7 +42,7 @@ const styles = StyleSheet.create({
     top: -90,
     width: 18,
     height: 400,
-    backgroundColor: 'rgba(180,225,240,0.06)',
+    backgroundColor: sapphire.reflection,
     transform: [{ rotate: '35deg' }],
   },
 });

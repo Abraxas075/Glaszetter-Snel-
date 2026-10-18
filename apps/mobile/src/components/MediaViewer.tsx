@@ -3,10 +3,13 @@ import { Linking, Image, Modal, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { safeMediaUrl, type JobMedia } from '@glaszetter/shared';
-import { sapphire } from '../constants/sapphire';
-import { sapphireStyles as s } from './SapphireScreen';
+import { useSapphire } from '../contexts/ThemeContext';
+import { useSapphireStyles } from './SapphireScreen';
 
 export function MediaViewer({ item, onClose }: { item: JobMedia | null; onClose: () => void }) {
+  const sapphire = useSapphire();
+  const s = useSapphireStyles();
+
   const [error, setError] = useState('');
   useEffect(() => setError(''), [item?.id]);
   const url = item && safeMediaUrl(item.url);
@@ -46,7 +49,7 @@ export function MediaViewer({ item, onClose }: { item: JobMedia | null; onClose:
             <WebView
               key={item.id}
               source={{
-                html: `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; media-src https:; style-src 'unsafe-inline'"></head><body style="margin:0;background:#06182E;display:flex;align-items:center;height:100vh"><video controls playsinline preload="metadata" style="width:100%;max-height:100vh" src="${source}"></video></body></html>`,
+                html: `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; media-src https:; style-src 'unsafe-inline'"></head><body style="margin:0;background:${sapphire.background};display:flex;align-items:center;height:100vh"><video controls playsinline preload="metadata" style="width:100%;max-height:100vh" src="${source}"></video></body></html>`,
               }}
               originWhitelist={['about:blank']}
               onShouldStartLoadWithRequest={(request) => request.url === 'about:blank'}

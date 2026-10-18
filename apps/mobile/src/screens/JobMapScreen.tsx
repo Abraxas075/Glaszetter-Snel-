@@ -27,10 +27,11 @@ import {
 } from '@glaszetter/shared';
 import { apiRequest } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
-import { SapphireScreen, sapphireStyles as s } from '../components/SapphireScreen';
+import { SapphireScreen, useSapphireStyles } from '../components/SapphireScreen';
 import { GlassPanel } from '../components/GlassPanel';
 import { GoogleMapsActions } from '../components/GoogleMapsActions';
 import { nativeMapHtml, mapJobMessage } from '../utils/mapHtml';
+import { useSapphire } from '../contexts/ThemeContext';
 const statuses: Record<string, string> = {
   concept: 'Concept',
   measuring: 'Inmeten',
@@ -57,6 +58,9 @@ function Choice({
   onChange: (value: string) => void;
   disabled?: boolean;
 }) {
+  const palette = useSapphire();
+  const s = useSapphireStyles();
+
   const [open, setOpen] = useState(false);
   return (
     <View style={{ gap: 8, marginVertical: 6 }}>
@@ -80,14 +84,14 @@ function Choice({
               key={option.value}
               style={[
                 s.action,
-                { backgroundColor: option.value === value ? '#075da4' : '#16324d' },
+                { backgroundColor: option.value === value ? palette.selected : palette.glass },
               ]}
               onPress={() => {
                 onChange(option.value);
                 setOpen(false);
               }}
             >
-              <Text style={s.actionText}>{option.label}</Text>
+              <Text style={s.text}>{option.label}</Text>
             </Pressable>
           ))}
         </ScrollView>
@@ -96,12 +100,16 @@ function Choice({
   );
 }
 export function JobMapScreen() {
+
   const { token, isLoading } = useAuth();
   if (isLoading) return <ActivityIndicator />;
   if (!token) return <Redirect href="/login" />;
   return <MapContents key={token} token={token} />;
 }
 function MapContents({ token }: { token: string }) {
+  const palette = useSapphire();
+  const s = useSapphireStyles();
+
   const router = useRouter();
   const [directory, setDirectory] = useState<MapDirectory>({
     jobs: [],
@@ -274,7 +282,7 @@ function MapContents({ token }: { token: string }) {
           <TextInput
             accessibilityLabel="Zoeken op klus, project of adres"
             placeholder="Zoeken op klus, project of adres"
-            placeholderTextColor="#B9CEDF"
+            placeholderTextColor={palette.muted}
             value={search}
             onChangeText={setSearch}
             style={{

@@ -32,10 +32,14 @@ import { useAuth } from '../contexts/AuthContext';
 import { useChatSession } from '../hooks/useChatSession';
 import { MediaViewer } from '../components/MediaViewer';
 import { VideoThumbnail } from '../components/VideoThumbnail';
-import { sapphire } from '../constants/sapphire';
+import type { SapphirePalette } from '../constants/sapphire';
+import { useSapphire, useThemedStyles } from '../contexts/ThemeContext';
 type Draft = { text: string; clientId: string; file: ImagePicker.ImagePickerAsset | null };
 const empty = (): Draft => ({ text: '', clientId: newChatClientId(), file: null });
 export function ChatScreen() {
+  const sapphire = useSapphire();
+  const c = useThemedStyles(createC);
+
   const { user, token, isLoading } = useAuth();
   const [channels, setChannels] = useState<ChatChannel[]>([]),
     [selected, setSelected] = useState<ChatChannel | null>(null),
@@ -149,6 +153,9 @@ function Conversation({
   sent: (id: string) => void;
   back: () => void;
 }) {
+  const sapphire = useSapphire();
+  const c = useThemedStyles(createC);
+
   const load = useCallback(
     (before?: string) =>
       apiRequest<ChatPage>(
@@ -421,9 +428,9 @@ function Conversation({
             ]}
           >
             {sending ? (
-              <ActivityIndicator color={sapphire.background} />
+              <ActivityIndicator color={sapphire.onPrimary} />
             ) : (
-              <Feather name="send" size={20} color={sapphire.background} />
+              <Feather name="send" size={20} color={sapphire.onPrimary} />
             )}
           </Pressable>
         </View>
@@ -431,13 +438,13 @@ function Conversation({
     </KeyboardAvoidingView>
   );
 }
-const c = StyleSheet.create({
+const createC = (sapphire: SapphirePalette) => StyleSheet.create({
   screen: { flex: 1, backgroundColor: sapphire.background },
   title: { fontFamily: 'serif', fontSize: 30, color: sapphire.text, marginBottom: 12 },
   text: { color: sapphire.text, fontSize: 15, lineHeight: 22 },
   muted: { color: sapphire.muted, fontSize: 14, lineHeight: 21 },
   small: { color: sapphire.muted, fontSize: 11, lineHeight: 16 },
-  error: { color: '#FF8290', fontSize: 13, lineHeight: 19, padding: 10 },
+  error: { color: sapphire.error, fontSize: 13, lineHeight: 19, padding: 10 },
   channel: {
     flexDirection: 'row',
     gap: 14,
@@ -468,7 +475,7 @@ const c = StyleSheet.create({
     borderWidth: 1,
     borderColor: sapphire.inner,
   },
-  own: { alignSelf: 'flex-end', backgroundColor: '#103A58', borderColor: '#197BA8' },
+  own: { alignSelf: 'flex-end', backgroundColor: sapphire.selected, borderColor: sapphire.ownBorder },
   sender: { color: sapphire.muted, fontSize: 12, fontWeight: '500' },
   attachment: { width: 220, maxWidth: '100%', height: 165, backgroundColor: sapphire.background },
   composer: {

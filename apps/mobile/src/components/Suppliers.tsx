@@ -4,9 +4,9 @@ import { ActivityIndicator, Alert, Linking, Pressable, Text, View } from 'react-
 import { useFocusEffect } from 'expo-router';
 import { supplierLinks, type Supplier } from '@glaszetter/shared';
 import { apiRequest } from '../api/client';
-import { sapphireStyles as s } from './SapphireScreen';
+import { useSapphireStyles } from './SapphireScreen';
 import { GlassPanel } from './GlassPanel';
-import { sapphire } from '../constants/sapphire';
+import { useSapphire } from '../contexts/ThemeContext';
 
 export function useSuppliers(token: string | null) {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -30,6 +30,9 @@ async function open(url: string) {
   catch { Alert.alert('Niet geopend', 'Er is geen geschikte app beschikbaar om dit te openen.'); }
 }
 export function SupplierDirectory({suppliers, loading, error, load}: ReturnType<typeof useSuppliers>) {
+  const sapphire = useSapphire();
+  const s = useSapphireStyles();
+
   const [expanded, setExpanded] = useState(false);
   return <GlassPanel style={s.card}>
     <Pressable accessibilityRole="button" accessibilityState={{expanded}} style={s.action} onPress={() => setExpanded(value => !value)}><Text style={s.actionText}>Glasleveranciers ({loading ? '…' : suppliers.length}) — {expanded ? 'sluiten' : 'contactgegevens bekijken'}</Text></Pressable>

@@ -2,7 +2,8 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { usePathname, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
-import { sapphire } from '../constants/sapphire';
+import type { SapphirePalette } from '../constants/sapphire';
+import { useSapphire, useThemedStyles } from '../contexts/ThemeContext';
 import { MenuIcon, type MenuIconName } from './MenuIcon';
 const tabs: { label: string; path: '/' | '/my-jobs' | '/chat' | '/profile' | '/media'; icon: MenuIconName }[] =
   [
@@ -25,6 +26,9 @@ export const sapphirePaths = [
   '/profile',
 ];
 export function BottomNav() {
+  const sapphire = useSapphire();
+  const styles = useThemedStyles(createStyles);
+
   const path = usePathname();
   const router = useRouter();
   const { user } = useAuth();
@@ -47,14 +51,14 @@ export function BottomNav() {
             style={({ pressed }) => [styles.tab, pressed && { backgroundColor: sapphire.glass }]}
           >
             <MenuIcon name={tab.icon} size={24} active={selected} accent={selected} />
-            <Text style={[styles.label, selected && { color: sapphire.blue }]}>{tab.label}</Text>
+            <Text style={[styles.label, selected && { color: sapphire.link }]}>{tab.label}</Text>
           </Pressable>
         );
       })}
     </View>
   );
 }
-const styles = StyleSheet.create({
+const createStyles = (sapphire: SapphirePalette) => StyleSheet.create({
   bar: {
     flexDirection: 'row',
     backgroundColor: sapphire.background,

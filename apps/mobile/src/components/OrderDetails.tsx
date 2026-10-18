@@ -2,10 +2,13 @@ import { useEffect, useState } from 'react';
 import { Alert, Pressable, Text, TextInput, View } from 'react-native';
 import { formatDeliveryDate, normalizeOrderDetails, parseDutchDeliveryDate, type Job, type Supplier } from '@glaszetter/shared';
 import { apiRequest } from '../api/client';
-import { sapphireStyles as s } from './SapphireScreen';
-import { sapphire } from '../constants/sapphire';
+import { useSapphireStyles } from './SapphireScreen';
+import { useSapphire } from '../contexts/ThemeContext';
 
 export function OrderDetails({ job, token, suppliers = [], onSaved, onEditingChange }: { job: Job; token: string; suppliers?: Supplier[]; onSaved: (job: Job) => void; onEditingChange: (id: string, dirty: boolean, busy: boolean) => void }) {
+  const sapphire = useSapphire();
+  const s = useSapphireStyles();
+
   const [editing, setEditing] = useState(false), [busy, setBusy] = useState(false);
   const [number, setNumber] = useState(job.orderNumber ?? '');
   const [supplier, setSupplier] = useState(job.supplierName ?? '');

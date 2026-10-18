@@ -14,17 +14,9 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '../contexts/AuthContext';
 import { listMyJobs } from '../api/jobs';
 import { spacing } from '../constants/colors';
-import { sapphire } from '../constants/sapphire';
+import type { SapphirePalette } from '../constants/sapphire';
+import { useSapphire, useThemedStyles } from '../contexts/ThemeContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
-const colors = {
-  background: sapphire.background,
-  surface: sapphire.glass,
-  border: sapphire.edge,
-  primary: sapphire.blue,
-  textPrimary: sapphire.text,
-  textSecondary: sapphire.muted,
-  error: '#FF6472',
-};
 
 const formatDate = (date?: Date): string => {
   if (!date) return 'Nog niet ingepland';
@@ -32,6 +24,9 @@ const formatDate = (date?: Date): string => {
 };
 
 export const MyJobsScreen: React.FC = () => {
+  const sapphire = useSapphire();
+  const styles = useThemedStyles(createStyles);
+
   const router = useRouter();
   const { token } = useAuth();
   const locations = useProjectLocations();
@@ -73,7 +68,7 @@ export const MyJobsScreen: React.FC = () => {
       {error && <Text style={styles.error}>{error}</Text>}
 
       {!error && jobs === null && (
-        <ActivityIndicator style={styles.loading} color={colors.primary} />
+        <ActivityIndicator style={styles.loading} color={sapphire.blue} />
       )}
 
       {!error && jobs !== null && jobs.length === 0 && (
@@ -100,10 +95,10 @@ export const MyJobsScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (sapphire: SapphirePalette) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: sapphire.background,
   },
   header: {
     padding: spacing.xl,
@@ -112,44 +107,44 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: colors.textPrimary,
+    color: sapphire.text,
     marginBottom: spacing.xs,
   },
   subtitle: {
     fontSize: 14,
-    color: colors.textSecondary,
+    color: sapphire.muted,
   },
   list: {
     paddingHorizontal: spacing.lg,
     gap: spacing.md,
   },
   jobCard: {
-    backgroundColor: colors.surface,
+    backgroundColor: sapphire.glass,
     borderRadius: 0,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: sapphire.edge,
     padding: spacing.lg,
     marginBottom: spacing.md,
   },
   jobName: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.textPrimary,
+    color: sapphire.text,
     marginBottom: spacing.xs,
   },
   jobDate: {
     fontSize: 13,
-    color: colors.textSecondary,
+    color: sapphire.muted,
   },
   loading: {
     marginTop: spacing.xxl,
   },
   empty: {
     padding: spacing.xl,
-    color: colors.textSecondary,
+    color: sapphire.muted,
   },
   error: {
     padding: spacing.xl,
-    color: colors.error,
+    color: sapphire.error,
   },
 });

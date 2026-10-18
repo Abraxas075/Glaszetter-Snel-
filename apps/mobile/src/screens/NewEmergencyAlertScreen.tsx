@@ -2,15 +2,18 @@ import { useEffect, useRef, useState } from 'react';
 import { Alert, Image, Platform, Pressable, Text, TextInput, View } from 'react-native';
 import { Redirect, useNavigation, useRouter } from 'expo-router';
 import { useAuth } from '../contexts/AuthContext';
-import { SapphireScreen, sapphireStyles as s } from '../components/SapphireScreen';
+import { SapphireScreen, useSapphireStyles } from '../components/SapphireScreen';
 import { GlassPanel } from '../components/GlassPanel';
-import { sapphire } from '../constants/sapphire';
+import { useSapphire } from '../contexts/ThemeContext';
 import { useVoiceCapture } from '../hooks/useVoiceCapture';
 import { pickPhotoFromLibrary, takePhotoWithCamera } from '../hooks/usePhotoPicker';
 import type { PickedPhoto } from '../api/photos';
 import { createEmergencyAlert, listAssignees, newClientId, uploadEmergencyPhoto, type Assignee, type EmergencyAlert, type EmergencyDraft } from '../api/emergencyAlerts';
 const empty = (): EmergencyDraft => ({title:'',description:'',address:'',phone:'',assignedUserId:null});
 export function NewEmergencyAlertScreen() {
+  const sapphire = useSapphire();
+  const s = useSapphireStyles();
+
  const {user,token}=useAuth();const router=useRouter();const navigation=useNavigation();const voice=useVoiceCapture();
  const [draft,setDraft]=useState<EmergencyDraft>(empty);const [members,setMembers]=useState<Assignee[]>([]);const [memberError,setMemberError]=useState(false);
  const [photos,setPhotos]=useState<(PickedPhoto&{id:string})[]>([]);const [busy,setBusy]=useState(false);const [picking,setPicking]=useState(false);const [error,setError]=useState('');
@@ -53,13 +56,13 @@ export function NewEmergencyAlertScreen() {
    </View>}
    <Text style={s.text}>Toewijzen aan medewerker</Text>
    {memberError&&<Text style={s.muted}>Medewerkers konden niet worden geladen. Je kunt de melding zonder toewijzing opslaan.</Text>}
-   {!saved&&[{id:'',name:'Niet toegewezen'},...members].map(member=><Pressable key={member.id} accessibilityRole="radio" accessibilityState={{checked:(draft.assignedUserId||'')===member.id}} disabled={busy} style={[s.action,{backgroundColor:(draft.assignedUserId||'')===member.id?sapphire.red:sapphire.glass}]} onPress={()=>setDraft(current=>({...current,assignedUserId:member.id||null}))}><Text style={s.actionText}>{member.name}</Text></Pressable>)}
+   {!saved&&[{id:'',name:'Niet toegewezen'},...members].map(member=><Pressable key={member.id} accessibilityRole="radio" accessibilityState={{checked:(draft.assignedUserId||'')===member.id}} disabled={busy} style={[s.action,{backgroundColor:(draft.assignedUserId||'')===member.id?sapphire.red:sapphire.glass}]} onPress={()=>setDraft(current=>({...current,assignedUserId:member.id||null}))}><Text style={[s.actionText,{color:(draft.assignedUserId||'')===member.id?sapphire.onAccent:sapphire.text}]}>{member.name}</Text></Pressable>)}
    {saved&&<Text style={s.muted}>{saved.assignedUserName||'Niet toegewezen'}</Text>}
    <Text style={s.text}>Foto’s (JPG of PNG, maximaal 15 MiB per foto)</Text>
    <View style={{gap:8}}><Pressable accessibilityRole="button" disabled={busy||picking||photos.length>=10} style={s.action} onPress={()=>void pick(true)}><Text style={s.actionText}>Foto maken</Text></Pressable><Pressable accessibilityRole="button" disabled={busy||picking||photos.length>=10} style={s.action} onPress={()=>void pick(false)}><Text style={s.actionText}>Foto uit galerij</Text></Pressable></View>
    {photos.map(photo=><View key={photo.id}><Image source={{uri:photo.uri}} style={{width:'100%',height:180}} resizeMode="contain"/><Text style={s.muted}>{photo.fileName}</Text><Pressable accessibilityRole="button" disabled={busy} style={s.action} onPress={()=>setPhotos(current=>current.filter(p=>p.id!==photo.id))}><Text style={s.actionText}>Selectie verwijderen</Text></Pressable></View>)}
    {!!error&&<Text accessibilityRole="alert" style={s.text}>{error}</Text>}
-   <Pressable accessibilityRole="button" disabled={busy||picking||voice.isListening} style={[s.action,{backgroundColor:sapphire.red}]} onPress={()=>void save()}><Text style={s.actionText}>{busy?'Opslaan…':saved?'Foto’s opnieuw uploaden':'Melding opslaan'}</Text></Pressable>
+   <Pressable accessibilityRole="button" disabled={busy||picking||voice.isListening} style={[s.action,{backgroundColor:sapphire.red}]} onPress={()=>void save()}><Text style={[s.actionText,{color:sapphire.onAccent}]}>{busy?'Opslaan…':saved?'Foto’s opnieuw uploaden':'Melding opslaan'}</Text></Pressable>
    <Pressable accessibilityRole="button" disabled={busy} style={s.action} onPress={()=>router.back()}><Text style={s.actionText}>Sluiten</Text></Pressable>
   </GlassPanel>
  </SapphireScreen>;

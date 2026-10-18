@@ -16,13 +16,18 @@ import type { Job, JobMedia, PaginatedResponse } from '@glaszetter/shared';
 import { MEDIA_MAX_BYTES, PHOTO_MAX_BYTES, safeMediaUrl } from '@glaszetter/shared';
 import { apiRequest } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
-import { SapphireScreen, sapphireStyles as s } from '../components/SapphireScreen';
+import { SapphireScreen, useSapphireStyles } from '../components/SapphireScreen';
 import { VideoThumbnail } from '../components/VideoThumbnail';
 import { MediaViewer } from '../components/MediaViewer';
 import { GlassPanel } from '../components/GlassPanel';
-import { sapphire } from '../constants/sapphire';
+import type { SapphirePalette } from '../constants/sapphire';
+import { useSapphire, useThemedStyles } from '../contexts/ThemeContext';
 
 export function MediaScreen() {
+  const sapphire = useSapphire();
+  const s = useSapphireStyles();
+  const galleryStyles = useThemedStyles(createGalleryStyles);
+
   const { token, user, isLoading } = useAuth();
   const [jobs, setJobs] = useState<Job[]>([]),
     [jobId, setJobId] = useState(''),
@@ -407,7 +412,7 @@ export function MediaScreen() {
   );
 }
 
-const galleryStyles = StyleSheet.create({
+const createGalleryStyles = (sapphire: SapphirePalette) => StyleSheet.create({
   compactButton: {
     minHeight: 44,
     paddingVertical: 10,

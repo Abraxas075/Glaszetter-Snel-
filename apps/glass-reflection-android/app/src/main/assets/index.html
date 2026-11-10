@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"><meta name="theme-color" content="#07111f"><title>Glasdikte reflectiemeter · Galaxy S24 Ultra</title>
+<style>
+:root{color-scheme:dark;--bg:#07111f;--panel:#102239;--ink:#e7f5ff;--muted:#9caec3;--accent:#5fe2ff;--gold:#ffd17e;--danger:#ffab80}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overscroll-behavior:none;overflow:hidden;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink)}
+#shell{height:100dvh;width:100vw;display:flex;flex-direction:column}header{display:flex;align-items:center;justify-content:space-between;gap:8px;background:#0e1c2e;border-bottom:1px solid #233f57;min-height:44px;padding:4px 8px}header b{font-size:clamp(11px,2.1vw,16px);letter-spacing:.035em}header small{color:#94a7bb;font-size:10px}nav{display:flex;gap:5px;align-items:center;flex-shrink:0}button,select,input{font:inherit}button{border:1px solid #315a75;border-radius:9px;background:#173248;color:#eaf5ff;padding:8px 10px;font-size:12px;min-height:32px;cursor:pointer}button.active{background:#1c6884;color:#fff;border-color:#66d7ff}button:focus-visible,input:focus-visible{outline:2px solid #ffdb97}button.orange{background:#76512a;border-color:#ce9a57}button:disabled{opacity:.5}
+main{flex:1;min-height:0;position:relative;overflow:hidden}section{position:absolute;inset:0;display:none}section.active{display:flex;flex-direction:column}#meter{background:#040d19;align-items:center;justify-content:center}#gauge-svg{flex:none;max-width:none;overflow:visible}#toolbar{position:absolute;right:6px;bottom:6px;z-index:10;display:flex;gap:5px;background:#07131be6;border:1px solid #25475d;padding:3px 5px;border-radius:8px;align-items:center}#toolbar label{font-size:11px;color:#a6bbd0}#toolbar input{accent-color:#5fe2ff}#status{position:absolute;left:8px;top:8px;font-size:11px;color:#9bbed0;background:#020b13a8;padding:4px 8px;border-radius:6px}
+#cal,#help{overflow:auto;align-items:center;justify-content:flex-start;padding:10px;background:#07111f}#cal .layout{width:min(100%,850px);margin:auto;display:grid;grid-template-columns: minmax(0,1.2fr) minmax(220px,.8fr);gap:14px;align-items:center}.panel{border:1px solid #294966;background:#12253a;padding:10px 12px;border-radius:13px}.panel h2{font-size:16px;margin:0 0 6px}.panel p{color:#c2d4e4;font-size:12px;margin:5px 0}.cal-line{position:relative;height:28px;max-width:none;border-left:3px solid var(--gold);border-right:3px solid var(--gold);border-bottom:3px solid var(--gold);margin:16px 0 6px;box-shadow:0 7px 14px #0003}.cal-line::after{content:'85,6 mm';display:block;text-align:center;position:absolute;top:-9px;left:0;width:100%;color:var(--gold);font-weight:bold;font-size:12px}.rowbuttons{display:flex;gap:5px;align-items:center;flex-wrap:wrap}.rowbuttons button{font-size:14px;padding:6px 10px}.value{font-size:13px;color:#7fe6f1;font-weight:700}.small{color:#92a9bf;font-size:11px}.callout{color:#ffd4a1!important}.field{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:4px 0}.field select{background:#20394d;border:1px solid #54718b;color:white;border-radius:7px;padding:5px}.field input[type=number]{width:65px;padding:6px;background:#20394d;border:1px solid #54718b;border-radius:7px;color:white}
+#help>.panel{max-width:780px;width:100%;margin:auto}.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.step{padding:12px;border:1px solid #355474;background:#0c1b2b;border-radius:12px}.step strong{color:#83e6ff;font-size:14px}.step p{color:#c2d4e4;font-size:12px;line-height:1.45}footer{display:none}#portrait{display:none;position:fixed;inset:0;z-index:99;background:#061326;color:white;padding:36px;text-align:center;align-items:center;justify-content:center;flex-direction:column;gap:20px}#portrait .turn{font-size:60px;color:#62dcfa}
+@media (orientation:portrait){#portrait{display:flex}}
+@media (max-height:390px){header{min-height:38px}button{min-height:30px;padding:5px 7px;font-size:11px}}
+@media (max-width:780px){header small{display:none}.panel{padding:8px}#cal .layout{grid-template-columns:1fr 1fr}.panel h2{font-size:14px}.panel p{font-size:11px}.steps{gap:5px}}
+
+/* Snelle tekstloze reflectiemodus: verbergt alle tekens, ook cijfers, maar geen meetlijnen. */
+#letters-toggle{position:absolute;right:8px;top:8px;z-index:40;min-width:43px;min-height:38px;background:#214b61;color:#fff;border:1px solid #72dded;box-shadow:0 2px 8px #0008}
+#letters-toggle[aria-pressed="true"]{background:#11677d}
+body.no-letters header{display:none}
+body.no-letters #meter svg text{display:none}
+body.no-letters #status,body.no-letters #toolbar{display:none}
+body.no-letters #letters-toggle{top:8px;right:8px;opacity:.72}
+</style></head>
+<body><div id="shell"><header><div><b>REFLECTIEMETER · S24 ULTRA</b> <small>2–25 mm · experimenteel</small></div><nav><button id="btn-meter" class="active">Meten</button><button id="btn-cal">Kalibreren</button><button id="btn-help">Uitleg</button><button id="btn-hide-letters" title="Alle letters en cijfers verbergen">Tekst uit</button><button id="btn-full" title="Volledig scherm">⛶</button></nav></header>
+<main>
+<section id="meter" class="active"><button id="letters-toggle" aria-label="Schakel tekstloze meetstand in of uit" aria-pressed="false" title="Tekst aan/uit">👁</button><div id="status">Schaal: voorlopig · test eerst met bekende glasdikte</div><svg id="gauge-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 153 62" aria-label="Reflectieglasdikteschaal"></svg><div id="toolbar"><label><input type="checkbox" id="mirror" checked> Spiegelgetallen</label><label><input type="checkbox" id="bright" checked> Helder</label></div></section>
+<section id="cal"><div class="layout">
+<div class="panel"><h2>1 · Kalibreer op bankpas</h2><p>Pas de meetlijn aan tot deze exact even breed is als een bankpas van 85,6 mm. Leg de bankpas niet op een onbeschermd scherm.</p><div id="cal-line" class="cal-line" aria-label="85,6 mm kalibratielijn"></div><div class="rowbuttons"><button data-scale="-0.5">−0,5%</button><button data-scale="-0.1">−0,1%</button><span class="value" id="scale-status">100,0%</span><button data-scale="0.1">+0,1%</button><button data-scale="0.5">+0,5%</button><button id="reset-scale">Reset</button></div><p class="small">De fysieke schaal wordt lokaal op dit toestel bewaard. Verander daarna browserzoom of weergavegrootte niet.</p></div>
+<div class="panel"><h2>2 · Controleer met proefglas</h2><p>Houd het toestel onder 45° tegen een ruit waarvan je de glasdikte zeker weet. Lees de schaal af en corrigeer daarmee de optische factor.</p><div class="field"><label>Werkelijke dikte <select id="known"><option>3</option><option>4</option><option selected>6</option><option>5</option><option>8</option><option>10</option><option>12</option></select> mm</label></div><div class="field"><label>Nu afgelezen <input id="seen" type="number" step="0.1" min="2" max="25" value="6"> mm</label><button id="apply-known" class="orange">Fijnafstellen</button></div><div class="field"><label>Opstellingshoek <select id="angle"><option>35</option><option>40</option><option selected>45</option><option>50</option><option>55</option></select> °</label><button id="reset-optic">Standaard 45°</button></div><p><span class="value" id="optic-status"></span></p><p class="small">Bankpaskalibratie corrigeert alleen de weergave-afmetingen, niet de optiek. Deze methode is een benadering; controleer regelmatig met een echte glasdiktemeter.</p></div></div></section>
+<section id="help"><div class="panel"><h2>Zo meet je met reflectie</h2><div class="steps"><div class="step"><strong>1 · Voorbereiden</strong><p>Draai de telefoon liggend. Open <b>Kalibreren</b>, vergelijk de streep met een bankpas en zet de schermhelderheid hoog.</p></div><div class="step"><strong>2 · Plaatsen</strong><p>Houd de lange onderrand van de telefoon <b>voorzichtig, met bescherming</b> tegen de ruit, met het scherm ongeveer <b>45°</b> naar het glas gekanteld. Kijk in de ruit naar de weerspiegeling.</p></div><div class="step"><strong>3 · Aflezen</strong><p>Zoek de zwakkere, tweede weerspiegeling van de <b>cyaanblauwe basislijn</b>. Waar die samenvalt met een kort wit streepje, lees je de dikte in mm.</p></div></div><p class="callout"><b>Let op:</b> deze proefmeter meet de dikte van één glasblad, niet automatisch de spouw of de totale HR++-ruit. Reflectie bij coatings, gelaagd glas en isolatieglas kan dubbelzinnig zijn. Gebruik het resultaat niet zonder controle voor een glasbestelling.</p><p><b>Waarom spiegelgetallen?</b> De cijfers zijn op het scherm omgekeerd, zodat ze in het glas leesbaar kunnen zijn. Schakel "Spiegelgetallen" uit als je de meter rechtstreeks wilt bekijken.</p><button id="back-to-meter" class="active">Open de meetkaart</button></div></section>
+</main></div><div id="portrait"><div class="turn">⟳</div><b>Draai je Galaxy S24 Ultra liggend</b><span>Deze reflectiemeter is gemaakt voor gebruik in landschapsstand.</span></div>
+<script>
+(function(){'use strict';
+const els=(id)=>document.getElementById(id); const n=1.50;
+const physicalWidthMm = Math.hypot(3120,1440)/(6.8*25.4); // pixel/mm at 3120x1440
+const defaultPxMm = Math.max(window.screen?.width||window.innerWidth,window.screen?.height||window.innerHeight) / (3120/physicalWidthMm); // CSS px/mm based on physical screen width; independent of FHD+/QHD+ setting
+let multiplier=Number(localStorage.getItem('s24-ref-scale')||1);
+let angle=Number(localStorage.getItem('s24-ref-angle')||45);
+let opticalExtra=Number(localStorage.getItem('s24-ref-optical')||1);
+let mirror=localStorage.getItem('s24-ref-mirror')!=='false';
+let hideLetters=localStorage.getItem('s24-ref-hide-letters')==='true';
+if(!isFinite(multiplier)||multiplier<.7||multiplier>1.4)multiplier=1;
+if(!isFinite(opticalExtra)||opticalExtra<.5||opticalExtra>1.5)opticalExtra=1;
+if(!isFinite(angle)||angle<35||angle>55)angle=45;
+els('angle').value=String(angle);els('mirror').checked=mirror;
+function factor(){const b=angle*Math.PI/180;return opticalExtra*Math.tan(Math.asin(Math.cos(b)/n))/Math.cos(b)}
+function mmcss(){return defaultPxMm*multiplier}
+function E(tag,attrs,text){const e=document.createElementNS('http://www.w3.org/2000/svg',tag);for(const [k,v] of Object.entries(attrs||{}))e.setAttribute(k,String(v));if(text!=null)e.textContent=text;return e}
+function draw(){
+ const mm=mmcss(),g=els('gauge-svg');g.setAttribute('style',`width:${153*mm}px;height:${62*mm}px`);g.replaceChildren();
+ g.append(E('rect',{x:0,y:0,width:153,height:62,fill:'#050d19'}));
+ g.append(E('line',{x1:4,y1:9,x2:149,y2:9,stroke:'#365166','stroke-width':.3}));
+ g.append(E('text',{x:5,y:6,fill:'#bcd5e7','font-size':3.4,'font-weight':700},'GLASDIKTE  ·  REFLECTIE  ·  2—25 mm'));
+ g.append(E('text',{x:148,y:6,fill:'#8db3c3','font-size':2.8,'text-anchor':'end'},`${angle}° / S24 ULTRA`));
+ g.append(E('text',{x:5,y:13.5,fill:'#80adc1','font-size':2.4},'ZOEK DE ZWAKKERE REFLECTIE VAN DE CYAANBLAUWE BASISLIJN'));
+ const base=48.5;
+ g.append(E('line',{x1:5,y1:base,x2:148,y2:base,stroke:'#4be4ff','stroke-width':.55}));
+ g.append(E('text',{x:6,y:base+4,fill:'#4be4ff','font-size':2.3},'BASISLIJN'));
+ const k=factor();
+ for(let t=2;t<=25;t++){
+   const x=8+(t-2)*137/23,y=base-k*t;
+   const important=[2,3,4,5,6,8,10,12,15,20,25].includes(t);
+   const color=important?'#fff4d1':'#c9d9e6';
+   g.append(E('line',{x1:x-1.92,y1:y,x2:x+1.92,y2:y,stroke:color,'stroke-width':important?.62:.43,'stroke-linecap':'round'}));
+   let label=E('text',{x:x,y:y-1.38,fill:color,'font-size':2.6,'font-weight':700,'text-anchor':'middle',transform:mirror?`translate(${2*x} 0) scale(-1 1)`:''},t);g.append(label);
+ }
+ g.append(E('line',{x1:4,y1:58.7,x2:149,y2:58.7,stroke:'#fb9e7d','stroke-width':.42,'stroke-dasharray':'2,1.5'}));
+ g.append(E('text',{x:76,y:56.6,fill:'#ffa985','font-size':2.3,'text-anchor':'middle'},'ONDERSTE TELEFOONRAND → GLAS   ·   BESCHERM SCHERM EN RUIT'));
+ els('cal-line').style.width=`${85.6*mm}px`;
+ els('scale-status').textContent=`${(multiplier*100).toFixed(1).replace('.',',')}%`;
+ els('optic-status').textContent=`Optische schaal: ${k.toFixed(3).replace('.',',')} mm op scherm per mm glas`;
+ els('status').textContent=`hoek ${angle}° · schaal ${((multiplier)*100).toFixed(1).replace('.',',')}% · factor ${k.toFixed(3).replace('.',',')}`;
+}
+function setTextVisibility(state){hideLetters=state;document.body.classList.toggle('no-letters',hideLetters);els('letters-toggle').setAttribute('aria-pressed',String(hideLetters));els('btn-hide-letters').textContent=hideLetters?'Tekst aan':'Tekst uit';localStorage.setItem('s24-ref-hide-letters',String(hideLetters));}
+function tab(id){if(id!=='meter'&&hideLetters)setTextVisibility(false);for(const s of ['meter','cal','help'])els(s).classList.toggle('active',s===id);for(const s of ['meter','cal','help'])els('btn-'+s).classList.toggle('active',s===id);requestAnimationFrame(draw)}
+for(const s of ['meter','cal','help'])els('btn-'+s).onclick=()=>tab(s);
+els('back-to-meter').onclick=()=>tab('meter');
+els('letters-toggle').onclick=()=>setTextVisibility(!hideLetters);
+els('btn-hide-letters').onclick=()=>{tab('meter');setTextVisibility(!hideLetters)};
+els('btn-full').onclick=async()=>{try{if(!document.fullscreenElement){await document.documentElement.requestFullscreen();try{await screen.orientation.lock('landscape')}catch(e){}}else await document.exitFullscreen()}catch(e){alert('Volledig scherm niet beschikbaar; verberg de adresbalk of draai het toestel liggend.')}};
+for(const b of document.querySelectorAll('[data-scale]')) b.onclick=()=>{multiplier=Math.max(.7,Math.min(1.4,multiplier+Number(b.dataset.scale)/100));localStorage.setItem('s24-ref-scale',multiplier);draw()};
+els('reset-scale').onclick=()=>{multiplier=1;localStorage.setItem('s24-ref-scale',multiplier);draw()};
+els('angle').onchange=(e)=>{angle=Number(e.target.value);opticalExtra=1;localStorage.setItem('s24-ref-angle',angle);localStorage.setItem('s24-ref-optical',opticalExtra);draw()};
+els('reset-optic').onclick=()=>{angle=45;opticalExtra=1;els('angle').value='45';localStorage.setItem('s24-ref-angle',angle);localStorage.setItem('s24-ref-optical',opticalExtra);draw()};
+els('apply-known').onclick=()=>{const known=Number(els('known').value),seen=Number(els('seen').value);if(!known||!seen||seen<2||seen>25){alert('Vul een gemeten schaalwaarde in tussen 2 en 25 mm.');return;}opticalExtra*=seen/known;if(opticalExtra<.5||opticalExtra>1.5){alert('Deze afwijking is te groot: controleer hoek, kalibratie en aflezing.');opticalExtra/=seen/known;return;}localStorage.setItem('s24-ref-optical',opticalExtra);draw();alert(`Fijnafstelling toegepast voor ${known} mm proefglas. Controleer met een tweede bekende glasdikte.`)};
+els('mirror').onchange=e=>{mirror=e.target.checked;localStorage.setItem('s24-ref-mirror',String(mirror));draw()};
+els('bright').onchange=e=>{document.documentElement.style.filter=e.target.checked?'none':'brightness(.70)'};
+addEventListener('resize',draw);setTextVisibility(hideLetters);draw();
+})();
+</script></body></html>

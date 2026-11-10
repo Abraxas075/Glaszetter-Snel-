@@ -1,0 +1,51 @@
+name: Bouw reflectieglasdiktemeter S24 APK
+on:
+  push:
+    branches: ['feature/s24-reflectiemeter-apk']
+    paths:
+      - 'apps/glass-reflection-android/**'
+      - '.github/workflows/build-glass-reflection-apk.yml'
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: apps/glass-reflection-android
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Bouw zelfstandige APK
+        run: gradle --no-daemon :app:assembleDebug
+      - name: Controleer ondertekening en pakket
+        run: |
+          APK=app/build/outputs/apk/debug/app-debug.apk
+          SIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -1)
+          "$SIGNER" verify "$APK"
+          test -s "$APK"
+          cp "$APK" "$RUNNER_TEMP/Glasdikte-Reflectiemeter-S24-Ultra.apk"
+          sha256sum "$RUNNER_TEMP/Glasdikte-Reflectiemeter-S24-Ultra.apk"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Glasdikte-Reflectiemeter-S24-Ultra
+          path: ${{ runner.temp }}/Glasdikte-Reflectiemeter-S24-Ultra.apk
+          retention-days: 30
+      - name: Publiceer directe losse APK-download
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "glasdikte-reflectie-s24-v1.0.0" \
+            "$RUNNER_TEMP/Glasdikte-Reflectiemeter-S24-Ultra.apk" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "Glasdikte Reflectiemeter S24 Ultra v1.0.0" \
+            --notes "Offline Android APK, reflectieschaal 2–25 mm, kalibratie en optie om alle letters/cijfers te verbergen."
